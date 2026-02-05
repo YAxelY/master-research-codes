@@ -18,7 +18,7 @@ eager: True                                                   # eager or lazy lo
 eps: 0.000001
 seed: 0
 track_efficiency: True   # for training, needs to be False
-track_epoch: 10            # only relevant if efficiency stats are tracked.
+track_epoch: 2           # only relevant if efficiency stats are tracked.
 
 #enc
 is_image: True          # should a convolutional patch encoder be used?
