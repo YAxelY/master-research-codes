@@ -1,0 +1,30 @@
+=========================================
+Job      : ips_experiment  (411636)
+Node     : bigpu04
+Started  : Fri May 22 08:12:53 AM CEST 2026
+Notebook : ips-keras-style.ipynb
+Results  : ips-project/results/ips-keras-style
+=========================================
+[OK] Kaggle credentials : /users/jlacmou/supports/aubin/master-research-codes/ips-project/../kaggle.json
+[SETUP] Installation des dépendances...
+[CHECK] Vérification des datasets...
+  [OK]      samriddhibagchi/ddr-dataset-credits-to-authors
+  [OK]      aubinyoumbi/ips-node21-v1
+  [OK]      tandem03/luna16-byol-features
+  [OK]      pshikk/node-21-dataset-untampered
+
+[CONVERT] Notebook → script Python...
+[OK] Script généré : ips-project/_run_ips-keras-style.py
+[PATCH] Remplacement des chemins...
+  /kaggle/input/datasets  → ips-project/data/datasets/
+  /kaggle/working         → ips-project/outputs
+  checkpoints             → ips-project/results/ips-keras-style/checkpoints/
+  history                 → ips-project/results/ips-keras-style/history/
+  experiments             → ips-project/results/ips-keras-style/experiments/
+  saliency                → ips-project/results/ips-keras-style/saliency/
+  Patch OK.
+
+[RUN] Démarrage — Fri May 22 08:13:05 AM CEST 2026
+=========================================
+Device  : cpu
+GPUs disponibles : 1
