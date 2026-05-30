@@ -1,0 +1,396 @@
+=========================================
+Job      : ips_experiment  (415211)
+Node     : bigpu01
+Started  : Thu May 28 10:34:48 AM CEST 2026
+Notebook : master2-qmix-standard-ce.ipynb
+Results  : qmix_standard/results/master2-qmix-standard-ce/exp_001
+=========================================
+[OK] Kaggle credentials : /users/jlacmou/supports/aubin/master-research-codes/qmix_standard/../kaggle.json
+[SETUP] Création du virtualenv...
+[SETUP] Installation des dépendances...
+[CHECK] Vérification des datasets...
+  [MISSING] samriddhibagchi/ddr-dataset-credits-to-authors — téléchargement...
+Dataset URL: https://www.kaggle.com/datasets/samriddhibagchi/ddr-dataset-credits-to-authors
+License(s): MIT
+Downloading ddr-dataset-credits-to-authors.zip to qmix_standard/data/datasets/samriddhibagchi/ddr-dataset-credits-to-authors
+
+  [OK]      samriddhibagchi/ddr-dataset-credits-to-authors téléchargé
+
+[CONVERT] Notebook → script Python...
+[OK] Script généré : qmix_standard/_run_master2-qmix-standard-ce.py
+[PATCH] Remplacement des chemins...
+  /kaggle/input/datasets  → qmix_standard/data/datasets/
+  /kaggle/working         → qmix_standard/outputs
+  checkpoints             → qmix_standard/results/master2-qmix-standard-ce/exp_001/checkpoints/
+  history                 → qmix_standard/results/master2-qmix-standard-ce/exp_001/history/
+  experiments             → qmix_standard/results/master2-qmix-standard-ce/exp_001/experiments/
+  saliency                → qmix_standard/results/master2-qmix-standard-ce/exp_001/saliency/
+  Patch OK.
+
+[RUN] Démarrage — Thu May 28 10:49:45 AM CEST 2026
+=========================================
+Device  : cuda
+GPUs    : 1
+  GPU 0 : Tesla V100-PCIE-32GB — 34.1 GB
+PyTorch : 2.12.0+cu126
+
+=======================================================
+Config chargée ✓
+  Tâche      : dr_grade  (5 classes)
+  Métriques  : ['kappa', 'accuracy', 'f1']
+  img_size   : 384×384
+  n_epoch    : 100  (warmup=10)
+  batch_size : 16  |  lr=0.001  |  wd=0.0001
+  Encodeur   : resnet50  pretrained=True
+  Noise      : symmetric  Mis-H=50%  Mis-L=15%
+
+── Références papier (kappa %) ──
+  Standard CE │ no_noise=88.3  │ 50H+15L Best=81.4 Last=39.7
+  QMix        │ no_noise=90.1  │ 50H+15L Best=87.9 Last=86.3
+=======================================================
+[DDRDatasetCE] split=train |  6260 imgs | C0=3133, C1=315, C2=2238, C3=118, C4=456
+[DDRDatasetCE] split=valid |  2503 imgs | C0=1253, C1=126, C2=895, C3=47, C4=182
+[DDRDatasetCE] split=test  |  3759 imgs | C0=1880, C1=189, C2=1344, C3=71, C4=275
+
+[CE] input shape : torch.Size([3, 384, 384])
+[CE] label       : 0
+[DDRDatasetQMix] split=train |  7199 samples | Correct=3130 Mis-H=3130 Mis-L=939
+                 dist Correct : C0=1555, C1=156, C2=1132, C3=65, C4=222
+[DDRDatasetQMix] split=valid |  2503 samples | Correct=2503 Mis-H=0 Mis-L=0
+                 dist Correct : C0=1253, C1=126, C2=895, C3=47, C4=182
+[DDRDatasetQMix] split=test  |  3759 samples | Correct=3759 Mis-H=0 Mis-L=0
+                 dist Correct : C0=1880, C1=189, C2=1344, C3=71, C4=275
+
+[QMix] img_weak shape   : torch.Size([3, 384, 384])
+[QMix] img_strong shape : torch.Size([3, 384, 384])
+[QMix] label            : 3
+[QMix] noise_indicator  : 1  (0=Correct, 1=Mis-H, 2=Mis-L)
+
+Labels uniques CE (200 premiers) : [0]
+Downloading: "https://download.pytorch.org/models/resnet50-0676ba61.pth" to qmix_standard/backbone_cache/hub/checkpoints/resnet50-0676ba61.pth
+[StandardCENet] input=(4, 3, 384, 384) → prob=(4, 5) | sum≈1: 1.0000
+[StandardCENet] loss shape=(4,) entr shape=(4,)
+[StandardCENet] Params : 23.52 M
+
+[QMixNet] input=(4, 3, 384, 384) → prob=(4, 5) | sum≈1: 1.0000
+[QMixNet] loss shape=(4,) entr shape=(4,)
+[QMixNet] Params : 27.98 M
+[QMixNet] proj shape=(4, 128) | L2-norm≈1: 1.0000
+
+Sanity check GMM (50 samples)...
+  Durée : 6.2s
+  noise_pred shape : (50,)
+  w shape          : (50, 3)  (probs GMM)
+  Composantes      : Correct=27 Mis-H=8 Mis-L=15
+  AUC (attendu ~0.5 avant training) : 0.440
+SampleSeparator ✓
+Loss functions ✓
+  Ω(t=20) = 0.444
+  Ω(t=99) = 0.006
+  Ω(t=100)= 0.000
+  L_correct  = 1.9064
+  L_mis_h    = 0.4963
+  L_mis_l    = 1.0852
+  L_ssl      = 3.4879
+  L_con      = 1.8570
+  L_reg      = 0.0485
+  L_total    = 5.3934
+  L_total  = 5.3934  (gradient: False)
+QMixEngine ✓  mode=ce  run=ce_ddr_v1
+Params total : 23.52 M  (1 réseau(x))
+QMixEngine ✓  mode=qmix  run=qmix_ddr_v1
+Params total : 55.95 M  (2 réseau(x))
+
+QMixEngine CE   ✓
+QMixEngine QMix ✓
+save_history / load_history / save_weights / load_weights / log_experiment attachés ✓
+=======================================================
+Chargement des datasets DDR …
+=======================================================
+[DDRDatasetCE] split=train |  6260 imgs | C0=3133, C1=315, C2=2238, C3=118, C4=456
+[DDRDatasetCE] split=valid |  2503 imgs | C0=1253, C1=126, C2=895, C3=47, C4=182
+[DDRDatasetCE] split=test  |  3759 imgs | C0=1880, C1=189, C2=1344, C3=71, C4=275
+[DDRDatasetQMix] split=train |  7199 samples | Correct=3130 Mis-H=3130 Mis-L=939
+                 dist Correct : C0=1555, C1=156, C2=1132, C3=65, C4=222
+[DDRDatasetQMix] split=valid |  2503 samples | Correct=2503 Mis-H=0 Mis-L=0
+                 dist Correct : C0=1253, C1=126, C2=895, C3=47, C4=182
+[DDRDatasetQMix] split=test  |  3759 samples | Correct=3759 Mis-H=0 Mis-L=0
+                 dist Correct : C0=1880, C1=189, C2=1344, C3=71, C4=275
+
+Loaders prêts ✓
+  CE  train=6260  val=2503  test=3759
+  QMx train=7199  val=2503  test=3759
+
+=======================================================
+Runner QMix
+=======================================================
+QMixEngine ✓  mode=ce  run=ce_ddr_v1
+Params total : 23.52 M  (1 réseau(x))
+Ep 001/100 [CE] lr=0.00010 | train loss=0.7632 kappa=0.6458 | val   loss=0.5952 kappa=0.7704
+Ep 002/100 [CE] lr=0.00020 | train loss=0.7062 kappa=0.7027 | val   loss=1.2029 kappa=0.7069
+Ep 003/100 [CE] lr=0.00030 | train loss=0.7067 kappa=0.6927 | val   loss=0.6414 kappa=0.7441
+Ep 004/100 [CE] lr=0.00040 | train loss=0.6866 kappa=0.7092 | val   loss=0.6738 kappa=0.7866
+Ep 005/100 [CE] lr=0.00050 | train loss=0.6842 kappa=0.7019 | val   loss=0.7897 kappa=0.7128
+Ep 006/100 [CE] lr=0.00060 | train loss=0.7003 kappa=0.7004 | val   loss=0.8226 kappa=0.7230
+Ep 007/100 [CE] lr=0.00070 | train loss=0.7010 kappa=0.6941 | val   loss=1.0678 kappa=0.4940
+Ep 008/100 [CE] lr=0.00080 | train loss=0.7046 kappa=0.6868 | val   loss=0.6564 kappa=0.7742
+Ep 009/100 [CE] lr=0.00090 | train loss=0.6804 kappa=0.7052 | val   loss=0.9667 kappa=0.5740
+Ep 010/100 [CE] lr=0.00100 | train loss=0.7000 kappa=0.6853 | val   loss=0.8082 kappa=0.7112
+Ep 011/100 [CE] lr=0.00100 | train loss=0.7011 kappa=0.6901 | val   loss=0.6720 kappa=0.7923
+Ep 012/100 [CE] lr=0.00100 | train loss=0.6708 kappa=0.7226 | val   loss=0.6688 kappa=0.7673
+Ep 013/100 [CE] lr=0.00100 | train loss=0.6596 kappa=0.7235 | val   loss=0.6743 kappa=0.7413
+Ep 014/100 [CE] lr=0.00100 | train loss=0.6546 kappa=0.7311 | val   loss=0.6612 kappa=0.7467
+Ep 015/100 [CE] lr=0.00100 | train loss=0.6328 kappa=0.7416 | val   loss=0.6700 kappa=0.7385
+Ep 016/100 [CE] lr=0.00099 | train loss=0.6240 kappa=0.7472 | val   loss=0.7345 kappa=0.7810
+Ep 017/100 [CE] lr=0.00099 | train loss=0.6039 kappa=0.7585 | val   loss=0.5969 kappa=0.7856
+Ep 018/100 [CE] lr=0.00099 | train loss=0.6168 kappa=0.7520 | val   loss=0.6148 kappa=0.7645
+Ep 019/100 [CE] lr=0.00098 | train loss=0.5955 kappa=0.7678 | val   loss=0.6077 kappa=0.7429
+Ep 020/100 [CE] lr=0.00098 | train loss=0.5911 kappa=0.7570 | val   loss=0.7034 kappa=0.6729
+Ep 021/100 [CE] lr=0.00097 | train loss=0.5828 kappa=0.7795 | val   loss=0.5856 kappa=0.7965
+Ep 022/100 [CE] lr=0.00096 | train loss=0.5807 kappa=0.7693 | val   loss=0.6735 kappa=0.8050
+Ep 023/100 [CE] lr=0.00096 | train loss=0.5754 kappa=0.7797 | val   loss=0.6270 kappa=0.8117
+Ep 024/100 [CE] lr=0.00095 | train loss=0.5822 kappa=0.7647 | val   loss=0.5991 kappa=0.7866
+Ep 025/100 [CE] lr=0.00094 | train loss=0.5575 kappa=0.7787 | val   loss=0.5574 kappa=0.8262
+Ep 026/100 [CE] lr=0.00093 | train loss=0.5540 kappa=0.7936 | val   loss=0.5905 kappa=0.8106
+Ep 027/100 [CE] lr=0.00092 | train loss=0.5453 kappa=0.7942 | val   loss=0.5743 kappa=0.7959
+Ep 028/100 [CE] lr=0.00091 | train loss=0.5381 kappa=0.8019 | val   loss=0.6330 kappa=0.7473
+Ep 029/100 [CE] lr=0.00090 | train loss=0.5386 kappa=0.8032 | val   loss=0.5590 kappa=0.8354
+Ep 030/100 [CE] lr=0.00089 | train loss=0.5130 kappa=0.8132 | val   loss=0.5389 kappa=0.8305
+Ep 031/100 [CE] lr=0.00088 | train loss=0.5216 kappa=0.8091 | val   loss=0.6912 kappa=0.7416
+Ep 032/100 [CE] lr=0.00087 | train loss=0.5163 kappa=0.8048 | val   loss=0.5666 kappa=0.8530
+Ep 033/100 [CE] lr=0.00086 | train loss=0.5095 kappa=0.8131 | val   loss=0.6437 kappa=0.7698
+Ep 034/100 [CE] lr=0.00085 | train loss=0.5005 kappa=0.8190 | val   loss=0.5733 kappa=0.8125
+Ep 035/100 [CE] lr=0.00083 | train loss=0.4960 kappa=0.8206 | val   loss=0.5894 kappa=0.8167
+Ep 036/100 [CE] lr=0.00082 | train loss=0.4915 kappa=0.8233 | val   loss=0.6043 kappa=0.8198
+Ep 037/100 [CE] lr=0.00081 | train loss=0.4755 kappa=0.8318 | val   loss=0.5504 kappa=0.8136
+Ep 038/100 [CE] lr=0.00079 | train loss=0.4682 kappa=0.8357 | val   loss=0.5532 kappa=0.8209
+Ep 039/100 [CE] lr=0.00078 | train loss=0.4653 kappa=0.8332 | val   loss=0.5201 kappa=0.8409
+Ep 040/100 [CE] lr=0.00077 | train loss=0.4580 kappa=0.8338 | val   loss=0.5586 kappa=0.8250
+Ep 041/100 [CE] lr=0.00075 | train loss=0.4597 kappa=0.8338 | val   loss=0.5427 kappa=0.8465
+Ep 042/100 [CE] lr=0.00074 | train loss=0.4379 kappa=0.8468 | val   loss=0.5262 kappa=0.8475
+Ep 043/100 [CE] lr=0.00072 | train loss=0.4285 kappa=0.8536 | val   loss=0.5431 kappa=0.8175
+Ep 044/100 [CE] lr=0.00070 | train loss=0.4268 kappa=0.8518 | val   loss=0.5173 kappa=0.8523
+Ep 045/100 [CE] lr=0.00069 | train loss=0.4212 kappa=0.8570 | val   loss=0.6180 kappa=0.8048
+Ep 046/100 [CE] lr=0.00067 | train loss=0.4259 kappa=0.8488 | val   loss=0.5718 kappa=0.8285
+Ep 047/100 [CE] lr=0.00065 | train loss=0.4079 kappa=0.8684 | val   loss=0.5603 kappa=0.8218
+Ep 048/100 [CE] lr=0.00064 | train loss=0.4066 kappa=0.8584 | val   loss=0.6303 kappa=0.8364
+Ep 049/100 [CE] lr=0.00062 | train loss=0.3989 kappa=0.8670 | val   loss=0.5595 kappa=0.8249
+Ep 050/100 [CE] lr=0.00060 | train loss=0.3953 kappa=0.8649 | val   loss=0.5804 kappa=0.8409
+Ep 051/100 [CE] lr=0.00059 | train loss=0.3869 kappa=0.8749 | val   loss=0.5506 kappa=0.8344
+Ep 052/100 [CE] lr=0.00057 | train loss=0.3811 kappa=0.8755 | val   loss=0.5867 kappa=0.8396
+Ep 053/100 [CE] lr=0.00055 | train loss=0.3623 kappa=0.8771 | val   loss=0.6254 kappa=0.8385
+Ep 054/100 [CE] lr=0.00054 | train loss=0.3686 kappa=0.8885 | val   loss=0.5310 kappa=0.8576
+Ep 055/100 [CE] lr=0.00052 | train loss=0.3560 kappa=0.8815 | val   loss=0.5585 kappa=0.8593
+Ep 056/100 [CE] lr=0.00050 | train loss=0.3558 kappa=0.8844 | val   loss=0.5875 kappa=0.8484
+Ep 057/100 [CE] lr=0.00048 | train loss=0.3405 kappa=0.8919 | val   loss=0.5793 kappa=0.8358
+Ep 058/100 [CE] lr=0.00047 | train loss=0.3362 kappa=0.8965 | val   loss=0.5633 kappa=0.8468
+Ep 059/100 [CE] lr=0.00045 | train loss=0.3303 kappa=0.8961 | val   loss=0.6386 kappa=0.8484
+Ep 060/100 [CE] lr=0.00043 | train loss=0.3237 kappa=0.8920 | val   loss=0.5986 kappa=0.8499
+Ep 061/100 [CE] lr=0.00041 | train loss=0.3051 kappa=0.9063 | val   loss=0.5694 kappa=0.8494
+Ep 062/100 [CE] lr=0.00040 | train loss=0.3037 kappa=0.8989 | val   loss=0.5569 kappa=0.8608
+Ep 063/100 [CE] lr=0.00038 | train loss=0.3091 kappa=0.9064 | val   loss=0.5355 kappa=0.8664
+Ep 064/100 [CE] lr=0.00036 | train loss=0.2902 kappa=0.9108 | val   loss=0.5222 kappa=0.8695
+Ep 065/100 [CE] lr=0.00035 | train loss=0.2820 kappa=0.9139 | val   loss=0.5987 kappa=0.8492
+Ep 066/100 [CE] lr=0.00033 | train loss=0.2686 kappa=0.9163 | val   loss=0.5961 kappa=0.8612
+Ep 067/100 [CE] lr=0.00031 | train loss=0.2738 kappa=0.9184 | val   loss=0.6096 kappa=0.8551
+Ep 068/100 [CE] lr=0.00030 | train loss=0.2628 kappa=0.9160 | val   loss=0.6136 kappa=0.8551
+Ep 069/100 [CE] lr=0.00028 | train loss=0.2508 kappa=0.9285 | val   loss=0.6048 kappa=0.8458
+Ep 070/100 [CE] lr=0.00027 | train loss=0.2492 kappa=0.9263 | val   loss=0.5676 kappa=0.8689
+Ep 071/100 [CE] lr=0.00025 | train loss=0.2385 kappa=0.9293 | val   loss=0.6080 kappa=0.8567
+Ep 072/100 [CE] lr=0.00024 | train loss=0.2344 kappa=0.9290 | val   loss=0.5941 kappa=0.8653
+Ep 073/100 [CE] lr=0.00022 | train loss=0.2307 kappa=0.9316 | val   loss=0.5633 kappa=0.8663
+Ep 074/100 [CE] lr=0.00021 | train loss=0.2201 kappa=0.9356 | val   loss=0.5795 kappa=0.8730
+Ep 075/100 [CE] lr=0.00019 | train loss=0.2239 kappa=0.9378 | val   loss=0.5720 kappa=0.8590
+Ep 076/100 [CE] lr=0.00018 | train loss=0.2079 kappa=0.9405 | val   loss=0.6542 kappa=0.8583
+Ep 077/100 [CE] lr=0.00017 | train loss=0.2006 kappa=0.9454 | val   loss=0.6148 kappa=0.8659
+Ep 078/100 [CE] lr=0.00015 | train loss=0.1950 kappa=0.9449 | val   loss=0.6770 kappa=0.8649
+Ep 079/100 [CE] lr=0.00014 | train loss=0.1994 kappa=0.9414 | val   loss=0.6027 kappa=0.8677
+Ep 080/100 [CE] lr=0.00013 | train loss=0.1981 kappa=0.9413 | val   loss=0.6286 kappa=0.8691
+Ep 081/100 [CE] lr=0.00012 | train loss=0.1888 kappa=0.9459 | val   loss=0.6320 kappa=0.8701
+Ep 082/100 [CE] lr=0.00011 | train loss=0.1746 kappa=0.9511 | val   loss=0.6218 kappa=0.8713
+Ep 083/100 [CE] lr=0.00010 | train loss=0.1685 kappa=0.9558 | val   loss=0.6225 kappa=0.8737
+Ep 084/100 [CE] lr=0.00009 | train loss=0.1723 kappa=0.9498 | val   loss=0.6519 kappa=0.8629
+Ep 085/100 [CE] lr=0.00008 | train loss=0.1529 kappa=0.9571 | val   loss=0.6495 kappa=0.8745
+Ep 086/100 [CE] lr=0.00007 | train loss=0.1535 kappa=0.9560 | val   loss=0.6862 kappa=0.8745
+Ep 087/100 [CE] lr=0.00006 | train loss=0.1602 kappa=0.9528 | val   loss=0.6905 kappa=0.8680
+Ep 088/100 [CE] lr=0.00005 | train loss=0.1512 kappa=0.9582 | val   loss=0.6843 kappa=0.8731
+Ep 089/100 [CE] lr=0.00004 | train loss=0.1507 kappa=0.9615 | val   loss=0.6848 kappa=0.8704
+Ep 090/100 [CE] lr=0.00004 | train loss=0.1462 kappa=0.9576 | val   loss=0.6940 kappa=0.8711
+Ep 091/100 [CE] lr=0.00003 | train loss=0.1381 kappa=0.9603 | val   loss=0.6751 kappa=0.8775
+Ep 092/100 [CE] lr=0.00003 | train loss=0.1384 kappa=0.9614 | val   loss=0.6837 kappa=0.8757
+Ep 093/100 [CE] lr=0.00002 | train loss=0.1369 kappa=0.9624 | val   loss=0.6613 kappa=0.8775
+Ep 094/100 [CE] lr=0.00002 | train loss=0.1385 kappa=0.9611 | val   loss=0.6559 kappa=0.8808
+Ep 095/100 [CE] lr=0.00001 | train loss=0.1360 kappa=0.9632 | val   loss=0.6973 kappa=0.8766
+Ep 096/100 [CE] lr=0.00001 | train loss=0.1412 kappa=0.9647 | val   loss=0.6739 kappa=0.8754
+Ep 097/100 [CE] lr=0.00001 | train loss=0.1348 kappa=0.9644 | val   loss=0.6776 kappa=0.8729
+Ep 098/100 [CE] lr=0.00000 | train loss=0.1279 kappa=0.9648 | val   loss=0.6946 kappa=0.8716
+Ep 099/100 [CE] lr=0.00000 | train loss=0.1308 kappa=0.9634 | val   loss=0.6824 kappa=0.8737
+Ep 100/100 [CE] lr=0.00000 | train loss=0.1307 kappa=0.9650 | val   loss=0.6875 kappa=0.8732
+
+=======================================================
+Run : ce_ddr_v1  [CE]
+  Best kappa (val)  : 0.8808  (époque 94)
+  Last kappa (val)  : 0.8732
+  Avg last-10 kappa : 0.8755
+  Ep 0 train : VRAM=4423 MB  t=139.0s  |  val : VRAM=917 MB  t=47.5s
+  Ep 1 train : VRAM=4423 MB  t=136.6s  |  val : VRAM=917 MB  t=45.8s
+=======================================================
+
+Durée totale CE : 308.7 min
+Checkpoint sauvegardé : qmix_standard/outputs/runs/ce_ddr_v1/ce_ddr_v1.pt
+Poids sauvegardés : qmix_standard/outputs/runs/ce_ddr_v1/ce_ddr_v1_weights.pt
+History sauvegardée : qmix_standard/outputs/runs/ce_ddr_v1/ce_ddr_v1_history.json
+Expérience sauvegardée : qmix_standard/outputs/runs/ce_ddr_v1/ce_ddr_v1_experiment.csv
+
+── Évaluation test (CE) ──
+  Test loss  : 1.0181
+  Test kappa : 0.7755  (papier sans bruit ~0.883)
+  Test acc   : 0.7699
+  Test F1    : 0.5679
+QMixEngine ✓  mode=qmix  run=qmix_ddr_v1
+Params total : 55.95 M  (2 réseau(x))
+Ep 001/100 [QMIX] lr=0.00010 | train loss=1.5539 kappa=0.1164 | val   loss=1.1191 kappa=0.1896
+Ep 002/100 [QMIX] lr=0.00020 | train loss=1.5431 kappa=0.0984 | val   loss=1.2230 kappa=0.6402
+Ep 003/100 [QMIX] lr=0.00030 | train loss=1.5311 kappa=0.1340 | val   loss=1.2081 kappa=0.6379
+Ep 004/100 [QMIX] lr=0.00040 | train loss=1.5484 kappa=0.0941 | val   loss=1.2707 kappa=0.5791
+Ep 005/100 [QMIX] lr=0.00050 | train loss=1.5419 kappa=0.1031 | val   loss=1.2240 kappa=0.4965
+Ep 006/100 [QMIX] lr=0.00060 | train loss=1.5418 kappa=0.0864 | val   loss=1.2605 kappa=0.5047
+Ep 007/100 [QMIX] lr=0.00070 | train loss=1.5453 kappa=0.0876 | val   loss=1.2587 kappa=0.0661
+Ep 008/100 [QMIX] lr=0.00080 | train loss=1.5449 kappa=0.0828 | val   loss=1.3028 kappa=0.4124
+Ep 009/100 [QMIX] lr=0.00090 | train loss=1.5406 kappa=0.1080 | val   loss=1.3412 kappa=0.4828
+Ep 010/100 [QMIX] lr=0.00100 | train loss=1.5403 kappa=0.0984 | val   loss=1.2319 kappa=0.2390
+Ep 011/100 [QMIX] lr=0.00100 | train loss=4.4687 kappa=0.0062 | val   loss=1.5233 kappa=0.1196
+Ep 012/100 [QMIX] lr=0.00100 | train loss=5.0220 kappa=0.0035 | val   loss=1.5183 kappa=0.0000
+Ep 013/100 [QMIX] lr=0.00100 | train loss=4.8570 kappa=0.0243 | val   loss=1.3718 kappa=0.0573
+Ep 014/100 [QMIX] lr=0.00100 | train loss=4.2931 kappa=0.0272 | val   loss=2.1129 kappa=-0.0309
+Ep 015/100 [QMIX] lr=0.00100 | train loss=4.5505 kappa=0.0113 | val   loss=1.3841 kappa=0.0217
+Ep 016/100 [QMIX] lr=0.00099 | train loss=4.4098 kappa=0.0193 | val   loss=1.6313 kappa=0.0608
+Ep 017/100 [QMIX] lr=0.00099 | train loss=4.0327 kappa=0.0209 | val   loss=1.8288 kappa=-0.0046
+Ep 018/100 [QMIX] lr=0.00099 | train loss=4.5774 kappa=-0.0044 | val   loss=1.6573 kappa=0.2297
+Ep 019/100 [QMIX] lr=0.00098 | train loss=3.9990 kappa=0.0221 | val   loss=1.9343 kappa=-0.1238
+Ep 020/100 [QMIX] lr=0.00098 | train loss=4.4853 kappa=0.0117 | val   loss=1.6298 kappa=0.1587
+Ep 021/100 [QMIX] lr=0.00097 | train loss=4.0604 kappa=0.0209 | val   loss=1.6855 kappa=0.0909
+Ep 022/100 [QMIX] lr=0.00096 | train loss=4.2478 kappa=0.0131 | val   loss=1.7105 kappa=0.0489
+Ep 023/100 [QMIX] lr=0.00096 | train loss=4.1690 kappa=0.0309 | val   loss=1.9937 kappa=-0.0352
+Ep 024/100 [QMIX] lr=0.00095 | train loss=4.2249 kappa=0.0234 | val   loss=2.0336 kappa=-0.0383
+Ep 025/100 [QMIX] lr=0.00094 | train loss=4.0222 kappa=0.0434 | val   loss=2.1003 kappa=-0.0308
+Ep 026/100 [QMIX] lr=0.00093 | train loss=3.8083 kappa=0.0224 | val   loss=2.0103 kappa=0.0481
+Ep 027/100 [QMIX] lr=0.00092 | train loss=4.1823 kappa=0.0336 | val   loss=2.0593 kappa=0.0170
+Ep 028/100 [QMIX] lr=0.00091 | train loss=3.6225 kappa=0.0172 | val   loss=2.1873 kappa=0.0833
+Ep 029/100 [QMIX] lr=0.00090 | train loss=3.9297 kappa=0.0485 | val   loss=2.1632 kappa=0.0225
+Ep 030/100 [QMIX] lr=0.00089 | train loss=4.2164 kappa=0.0235 | val   loss=1.8726 kappa=-0.0182
+Ep 031/100 [QMIX] lr=0.00088 | train loss=4.0617 kappa=0.0392 | val   loss=1.9574 kappa=0.0659
+Ep 032/100 [QMIX] lr=0.00087 | train loss=4.2105 kappa=0.0266 | val   loss=2.1239 kappa=0.0029
+Ep 033/100 [QMIX] lr=0.00086 | train loss=4.0496 kappa=0.0441 | val   loss=3.0046 kappa=0.0642
+Ep 034/100 [QMIX] lr=0.00085 | train loss=4.5587 kappa=0.0409 | val   loss=1.9936 kappa=0.0380
+Ep 035/100 [QMIX] lr=0.00083 | train loss=3.9249 kappa=0.0465 | val   loss=2.3390 kappa=-0.0194
+Ep 036/100 [QMIX] lr=0.00082 | train loss=4.4906 kappa=0.0313 | val   loss=1.9286 kappa=-0.0101
+Ep 037/100 [QMIX] lr=0.00081 | train loss=3.8652 kappa=0.0451 | val   loss=2.8109 kappa=-0.0656
+Ep 038/100 [QMIX] lr=0.00079 | train loss=4.3261 kappa=0.0402 | val   loss=2.1140 kappa=-0.0021
+Ep 039/100 [QMIX] lr=0.00078 | train loss=3.8169 kappa=0.0349 | val   loss=2.0612 kappa=0.1671
+Ep 040/100 [QMIX] lr=0.00077 | train loss=3.9777 kappa=0.0272 | val   loss=2.4158 kappa=0.0381
+Ep 041/100 [QMIX] lr=0.00075 | train loss=4.2387 kappa=0.0376 | val   loss=1.9914 kappa=0.0011
+Ep 042/100 [QMIX] lr=0.00074 | train loss=3.6382 kappa=0.0416 | val   loss=2.5571 kappa=-0.0705
+Ep 043/100 [QMIX] lr=0.00072 | train loss=4.3500 kappa=0.0401 | val   loss=2.0595 kappa=0.0652
+Ep 044/100 [QMIX] lr=0.00070 | train loss=3.8777 kappa=0.0278 | val   loss=2.6168 kappa=0.0230
+Ep 045/100 [QMIX] lr=0.00069 | train loss=4.3383 kappa=0.0389 | val   loss=2.5001 kappa=0.0286
+Ep 046/100 [QMIX] lr=0.00067 | train loss=3.9826 kappa=0.0332 | val   loss=1.7515 kappa=0.1385
+Ep 047/100 [QMIX] lr=0.00065 | train loss=3.6950 kappa=0.0317 | val   loss=2.3689 kappa=0.1135
+Ep 048/100 [QMIX] lr=0.00064 | train loss=3.7969 kappa=0.0401 | val   loss=2.5066 kappa=0.0963
+Ep 049/100 [QMIX] lr=0.00062 | train loss=3.7497 kappa=0.0297 | val   loss=2.3668 kappa=0.0822
+Ep 050/100 [QMIX] lr=0.00060 | train loss=3.6420 kappa=0.0427 | val   loss=2.4182 kappa=0.0818
+Ep 051/100 [QMIX] lr=0.00059 | train loss=3.6053 kappa=0.0378 | val   loss=2.8339 kappa=0.0351
+Ep 052/100 [QMIX] lr=0.00057 | train loss=3.6760 kappa=0.0409 | val   loss=3.0742 kappa=0.0280
+Ep 053/100 [QMIX] lr=0.00055 | train loss=3.8905 kappa=0.0394 | val   loss=2.6686 kappa=0.0480
+Ep 054/100 [QMIX] lr=0.00054 | train loss=3.6655 kappa=0.0353 | val   loss=3.4594 kappa=0.0206
+Ep 055/100 [QMIX] lr=0.00052 | train loss=4.1446 kappa=0.0298 | val   loss=1.9757 kappa=0.1289
+Ep 056/100 [QMIX] lr=0.00050 | train loss=3.8409 kappa=0.0248 | val   loss=2.5142 kappa=0.0637
+Ep 057/100 [QMIX] lr=0.00048 | train loss=3.9739 kappa=0.0490 | val   loss=2.3343 kappa=0.1004
+Ep 058/100 [QMIX] lr=0.00047 | train loss=3.9561 kappa=0.0406 | val   loss=1.9858 kappa=0.1171
+Ep 059/100 [QMIX] lr=0.00045 | train loss=4.0081 kappa=0.0500 | val   loss=1.8682 kappa=0.0964
+Ep 060/100 [QMIX] lr=0.00043 | train loss=3.8793 kappa=0.0389 | val   loss=1.9238 kappa=0.1207
+Ep 061/100 [QMIX] lr=0.00041 | train loss=3.7026 kappa=0.0385 | val   loss=2.0074 kappa=0.1431
+Ep 062/100 [QMIX] lr=0.00040 | train loss=3.8933 kappa=0.0448 | val   loss=1.9169 kappa=0.0755
+Ep 063/100 [QMIX] lr=0.00038 | train loss=3.6357 kappa=0.0357 | val   loss=1.9200 kappa=0.1437
+Ep 064/100 [QMIX] lr=0.00036 | train loss=3.6862 kappa=0.0353 | val   loss=1.6814 kappa=0.0898
+Ep 065/100 [QMIX] lr=0.00035 | train loss=3.4799 kappa=0.0340 | val   loss=1.7421 kappa=0.1241
+Ep 066/100 [QMIX] lr=0.00033 | train loss=3.5243 kappa=0.0362 | val   loss=2.1028 kappa=0.0019
+Ep 067/100 [QMIX] lr=0.00031 | train loss=3.7089 kappa=0.0400 | val   loss=1.8210 kappa=0.1654
+Ep 068/100 [QMIX] lr=0.00030 | train loss=3.7147 kappa=0.0423 | val   loss=1.7625 kappa=0.1096
+Ep 069/100 [QMIX] lr=0.00028 | train loss=3.8726 kappa=0.0382 | val   loss=2.1456 kappa=0.1850
+Ep 070/100 [QMIX] lr=0.00027 | train loss=3.6241 kappa=0.0468 | val   loss=2.1321 kappa=0.2178
+Ep 071/100 [QMIX] lr=0.00025 | train loss=4.0030 kappa=0.0523 | val   loss=1.6270 kappa=0.0814
+Ep 072/100 [QMIX] lr=0.00024 | train loss=3.7518 kappa=0.0400 | val   loss=2.0621 kappa=0.1038
+Ep 073/100 [QMIX] lr=0.00022 | train loss=3.4073 kappa=0.0385 | val   loss=2.0847 kappa=0.1547
+Ep 074/100 [QMIX] lr=0.00021 | train loss=3.7686 kappa=0.0436 | val   loss=1.7714 kappa=0.0744
+Ep 075/100 [QMIX] lr=0.00019 | train loss=3.8959 kappa=0.0365 | val   loss=1.7906 kappa=0.1277
+Ep 076/100 [QMIX] lr=0.00018 | train loss=3.8937 kappa=0.0491 | val   loss=1.9062 kappa=0.1870
+Ep 077/100 [QMIX] lr=0.00017 | train loss=3.8918 kappa=0.0526 | val   loss=2.0168 kappa=0.1580
+Ep 078/100 [QMIX] lr=0.00015 | train loss=3.6384 kappa=0.0580 | val   loss=2.0730 kappa=0.0636
+Ep 079/100 [QMIX] lr=0.00014 | train loss=3.8963 kappa=0.0256 | val   loss=1.8997 kappa=0.1194
+Ep 080/100 [QMIX] lr=0.00013 | train loss=3.6523 kappa=0.0452 | val   loss=2.0900 kappa=0.0859
+Ep 081/100 [QMIX] lr=0.00012 | train loss=3.6813 kappa=0.0597 | val   loss=2.0531 kappa=0.1607
+Ep 082/100 [QMIX] lr=0.00011 | train loss=3.7604 kappa=0.0479 | val   loss=2.0479 kappa=0.1603
+Ep 083/100 [QMIX] lr=0.00010 | train loss=3.5076 kappa=0.0682 | val   loss=1.9583 kappa=0.1682
+Ep 084/100 [QMIX] lr=0.00009 | train loss=3.7002 kappa=0.0546 | val   loss=1.7843 kappa=0.1192
+Ep 085/100 [QMIX] lr=0.00008 | train loss=3.7363 kappa=0.0491 | val   loss=2.1725 kappa=0.0919
+Ep 086/100 [QMIX] lr=0.00007 | train loss=3.0755 kappa=0.0461 | val   loss=2.4187 kappa=0.1202
+Ep 087/100 [QMIX] lr=0.00006 | train loss=3.7084 kappa=0.0581 | val   loss=2.2389 kappa=0.1545
+Ep 088/100 [QMIX] lr=0.00005 | train loss=3.4816 kappa=0.0333 | val   loss=2.0317 kappa=0.1229
+Ep 089/100 [QMIX] lr=0.00004 | train loss=3.5846 kappa=0.0516 | val   loss=1.9949 kappa=0.1537
+Ep 090/100 [QMIX] lr=0.00004 | train loss=3.4885 kappa=0.0405 | val   loss=2.0386 kappa=0.1303
+Ep 091/100 [QMIX] lr=0.00003 | train loss=3.6432 kappa=0.0467 | val   loss=1.9766 kappa=0.1428
+Ep 092/100 [QMIX] lr=0.00003 | train loss=3.0438 kappa=0.0466 | val   loss=2.3051 kappa=0.1287
+Ep 093/100 [QMIX] lr=0.00002 | train loss=3.6384 kappa=0.0479 | val   loss=2.0999 kappa=0.1517
+Ep 094/100 [QMIX] lr=0.00002 | train loss=3.8000 kappa=0.0584 | val   loss=2.0257 kappa=0.1387
+Ep 095/100 [QMIX] lr=0.00001 | train loss=3.7328 kappa=0.0489 | val   loss=1.9842 kappa=0.1292
+Ep 096/100 [QMIX] lr=0.00001 | train loss=3.5540 kappa=0.0618 | val   loss=1.9601 kappa=0.1450
+Ep 097/100 [QMIX] lr=0.00001 | train loss=3.7145 kappa=0.0562 | val   loss=2.1718 kappa=0.1866
+Ep 098/100 [QMIX] lr=0.00000 | train loss=3.2787 kappa=0.0641 | val   loss=2.0536 kappa=0.1642
+Ep 099/100 [QMIX] lr=0.00000 | train loss=3.2631 kappa=0.0566 | val   loss=2.0325 kappa=0.1575
+Ep 100/100 [QMIX] lr=0.00000 | train loss=3.3379 kappa=0.0331 | val   loss=2.1625 kappa=0.1569
+
+=======================================================
+Run : qmix_ddr_v1  [QMIX]
+  Best kappa (val)  : 0.6402  (époque 2)
+  Last kappa (val)  : 0.1569
+  Avg last-10 kappa : 0.1501
+  Ep 0 train : VRAM=5226 MB  t=449.5s  |  val : VRAM=1722 MB  t=66.2s
+  Ep 1 train : VRAM=5228 MB  t=441.1s  |  val : VRAM=1725 MB  t=65.3s
+=======================================================
+
+Durée totale QMix : 1521.3 min
+Checkpoint sauvegardé : qmix_standard/outputs/runs/qmix_ddr_v1/qmix_ddr_v1.pt
+Poids sauvegardés : qmix_standard/outputs/runs/qmix_ddr_v1/qmix_ddr_v1_weights.pt
+History sauvegardée : qmix_standard/outputs/runs/qmix_ddr_v1/qmix_ddr_v1_history.json
+Expérience sauvegardée : qmix_standard/outputs/runs/qmix_ddr_v1/qmix_ddr_v1_experiment.csv
+
+── Évaluation test (QMix) ──
+  Test loss  : 1.7354
+  Test kappa : 0.2285  (papier 50H+15L ~0.879)
+  Test acc   : 0.4294
+  Test F1    : 0.2227
+
+=======================================================
+                  Comparaison finale                   
+=======================================================
+Méthode           Test Kappa   Test Acc    Test F1
+--------------------------------------------------
+Standard CE           0.7755     0.7699     0.5679
+QMix                  0.2285     0.4294     0.2227
+Δ (QMix-CE)          -0.5470    -0.3405    -0.3451
+=======================================================
+
+Résultats CE   → qmix_standard/outputs/runs/ce_ddr_v1
+Résultats QMix → qmix_standard/outputs/runs/qmix_ddr_v1
+=========================================
+Terminé : Fri May 29 05:26:30 PM CEST 2026
+Exit code : 0
+
+[DONE] Succès.
+
+── Résultats dans qmix_standard/results/master2-qmix-standard-ce/exp_001 ──
+
+  Checkpoints :
+
+  History :
