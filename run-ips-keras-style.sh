@@ -26,7 +26,7 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=128G
 #SBATCH --gres=gpu:1
-#SBATCH --partition=gpu
+#SBATCH --partition=bigpu
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=jerry.lacmou.zeutouo@u-picardie.fr
 
@@ -43,12 +43,13 @@ DATASETS=(
     "aubinyoumbi/ips-node21-v1"
     "tandem03/luna16-byol-features"
     "pshikk/node-21-dataset-untampered"
+    "iamtapendu/rsna-pneumonia-processed-dataset"
 )
 
 # =============================================================================
 #  Chemins cluster (ne pas modifier)
 # =============================================================================
-WORK_DIR="$HOME/ips-project"
+WORK_DIR="ips-project"
 DATA_ROOT="$WORK_DIR/data/datasets"        # remplace /kaggle/input/datasets
 WORK_KAGGLE="$WORK_DIR/outputs"            # remplace /kaggle/working
 BACKBONE_CACHE="$WORK_DIR/backbone_cache"  # remplace /kaggle/working/backbone_cache
@@ -72,8 +73,8 @@ echo "Results  : $RESULTS_DIR"
 echo "========================================="
 
 module purge              2>/dev/null || true
-module load cuda/12.2     2>/dev/null || true
-module load cudnn/8.9     2>/dev/null || true
+module load cuda/12.6     2>/dev/null || true
+#module load cudnn/8.9     2>/dev/null || true
 module load python/3.11.7 2>/dev/null || true
 
 mkdir -p "$WORK_DIR/logs"
@@ -90,7 +91,8 @@ cd "$WORK_DIR"
 # =============================================================================
 #  Kaggle credentials (kaggle.json versionné dans le repo)
 # =============================================================================
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+#SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(pwd)/.."
 
 if [ ! -f "$SCRIPT_DIR/kaggle.json" ]; then
     echo "[ERROR] kaggle.json introuvable dans $SCRIPT_DIR"
@@ -115,25 +117,27 @@ source "$VENV_DIR/bin/activate"
 
 echo "[SETUP] Installation des dépendances..."
 pip install --upgrade pip --quiet
+pip uninstall -y torch torchvision
 
 pip install --quiet \
-    torch==2.6.0 \
-    torchvision==0.21.0 \
-    --index-url https://download.pytorch.org/whl/cu122
+    torch \
+    torchvision \
+    --index-url https://download.pytorch.org/whl/cu126
 
 pip install --quiet \
-    numpy==2.0.2 \
-    scikit-learn==1.6.1 \
-    matplotlib==3.10.0 \
-    SimpleITK==2.5.3 \
-    h5py==3.15.1 \
-    Pillow==11.3.0 \
-    PyYAML==6.0.3 \
-    kaggle==2.0.0 \
-    nbconvert==6.4.5 \
-    tqdm==4.67.3 \
-    pandas==2.3.3 \
-    scipy==1.16.3
+    numpy \
+    scikit-learn \
+    matplotlib \
+    SimpleITK \
+    h5py \
+    Pillow \
+    PyYAML \
+    kaggle \
+    nbconvert \
+    tqdm \
+    pandas \
+    scipy \
+    codecarbon
 
 # =============================================================================
 #  Téléchargement des datasets manquants
@@ -194,6 +198,7 @@ for slug in [
     "aubinyoumbi/ips-node21-v1",
     "tandem03/luna16-byol-features",
     "pshikk/node-21-dataset-untampered",
+    "iamtapendu/rsna-pneumonia-processed-dataset",
 ]:
     src = src.replace(
         f"'/kaggle/input/datasets/{slug}'", f"'{dr}/{slug}'")
