@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-#  run-msips.sh — Script HPC pour le notebook MS-IPS (NODE21 + DDR + RSNA)
+#  run-hmsips.sh — Script HPC pour le notebook H-MS-IPS (NODE21 + DDR + RSNA)
 #
 #  Prérequis :
 #    - Ce script, le notebook et kaggle.json dans la branche kaggle-notebooks
@@ -11,13 +11,13 @@
 #    - iamtapendu/rsna-pneumonia-processed-dataset    (RSNA)
 #
 #  Sorties centralisées dans :
-#    ~/ips-project/results/ms-ips-op/
-#      ├── ms-ips/node21/   → *.pt, *_history.json, *_experiment.csv, confusion_matrix.png
-#      ├── ms-ips/ddr/      → *.pt, *_history.json, *_experiment.csv, saliency_ddr/
-#      └── ms-ips/rsna/     → *.pt, *_history.json, *_experiment.csv, saliency_rsna/
+#    ~/ips-project/results/hms-ips-op/
+#      ├── hmsips/node21/   → *.pt, *_history.json, *_experiment.csv, confusion_matrix.png, saliency/
+#      ├── hmsips/ddr/      → *.pt, *_history.json, *_experiment.csv, confusion_matrix.png, saliency/
+#      └── hmsips/rsna/     → *.pt, *_history.json, *_experiment.csv, confusion_matrix.png, saliency/
 # =============================================================================
 
-#SBATCH --job-name=msips_experiment
+#SBATCH --job-name=hmsips_experiment
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 #SBATCH --time=120:00:00
@@ -36,7 +36,7 @@ set -euo pipefail
 #  CONFIGURATION
 # =============================================================================
 
-NOTEBOOK="ms-ips-op.ipynb"
+NOTEBOOK="h-ms-ips.ipynb"
 
 DATASETS=(
     "pshikk/node-21-dataset-untampered"
@@ -80,11 +80,9 @@ mkdir -p "$WORK_KAGGLE"
 mkdir -p "$BACKBONE_CACHE"
 
 # Sous-dossiers alignés sur les SAVE_PATH définis dans le notebook
-mkdir -p "$RESULTS_DIR/ms-ips/node21"
-mkdir -p "$RESULTS_DIR/ms-ips/ddr"
-mkdir -p "$RESULTS_DIR/ms-ips/ddr/saliency_ddr"
-mkdir -p "$RESULTS_DIR/ms-ips/rsna"
-mkdir -p "$RESULTS_DIR/ms-ips/rsna/saliency_rsna"
+mkdir -p "$RESULTS_DIR/hmsips/node21/saliency"
+mkdir -p "$RESULTS_DIR/hmsips/ddr/saliency"
+mkdir -p "$RESULTS_DIR/hmsips/rsna/saliency"
 
 cd "$WORK_DIR"
 
@@ -103,7 +101,6 @@ echo "[OK] Kaggle credentials : $SCRIPT_DIR/kaggle.json"
 
 # =============================================================================
 #  Virtualenv + dépendances
-#  codecarbon est installé ici — inutile de le réinstaller depuis le notebook
 # =============================================================================
 VENV_DIR="$WORK_DIR/venv"
 if [ ! -d "$VENV_DIR" ]; then
@@ -114,7 +111,6 @@ source "$VENV_DIR/bin/activate"
 
 echo "[SETUP] Installation des dépendances..."
 pip install --upgrade pip --quiet
-
 
 pip install --quiet \
     torch \
@@ -188,8 +184,7 @@ results_dir = "$RESULTS_DIR"
 with open(script) as f:
     src = f.read()
 
-# ── 1. Supprimer toutes les lignes !pip install (magics Jupyter) ──────────────
-#    codecarbon et toute autre dépendance sont déjà installés par le bash
+# ── 1. Supprimer toutes les lignes !pip install ───────────────────────────────
 src = re.sub(r'^.*!pip install.*$', '', src, flags=re.MULTILINE)
 
 # ── 2. Datasets ──────────────────────────────────────────────────────────────
@@ -216,47 +211,52 @@ src = src.replace('"/kaggle/working/backbone_cache"', f'"{bc}"')
 
 # ── 4. SAVE_PATH node21 ──────────────────────────────────────────────────────
 src = src.replace(
-    "'/kaggle/working/ms-ips/node21'",
-    f"'{results_dir}/ms-ips/node21'")
+    "'/kaggle/working/hmsips/node21'",
+    f"'{results_dir}/hmsips/node21'")
 src = src.replace(
-    '"/kaggle/working/ms-ips/node21"',
-    f'"{results_dir}/ms-ips/node21"')
+    '"/kaggle/working/hmsips/node21"',
+    f'"{results_dir}/hmsips/node21"')
 
 # ── 5. SAVE_PATH ddr ─────────────────────────────────────────────────────────
 src = src.replace(
-    "'/kaggle/working/ms-ips/ddr'",
-    f"'{results_dir}/ms-ips/ddr'")
+    "'/kaggle/working/hmsips/ddr'",
+    f"'{results_dir}/hmsips/ddr'")
 src = src.replace(
-    '"/kaggle/working/ms-ips/ddr"',
-    f'"{results_dir}/ms-ips/ddr"')
+    '"/kaggle/working/hmsips/ddr"',
+    f'"{results_dir}/hmsips/ddr"')
 
 # ── 6. SAVE_PATH rsna ────────────────────────────────────────────────────────
 src = src.replace(
-    "'/kaggle/working/ms-ips/rsna'",
-    f"'{results_dir}/ms-ips/rsna'")
+    "'/kaggle/working/hmsips/rsna'",
+    f"'{results_dir}/hmsips/rsna'")
 src = src.replace(
-    '"/kaggle/working/ms-ips/rsna"',
-    f'"{results_dir}/ms-ips/rsna"')
+    '"/kaggle/working/hmsips/rsna"',
+    f'"{results_dir}/hmsips/rsna"')
 
-# ── 7. /kaggle/working générique ─────────────────────────────────────────────
+# ── 7. saliency (commun aux trois datasets) ───────────────────────────────────
+for dataset in ["node21", "ddr", "rsna"]:
+    src = re.sub(
+        rf"save_dir\s*=\s*['\"][^'\"]*hmsips/{dataset}/saliency['\"]",
+        f"save_dir='{results_dir}/hmsips/{dataset}/saliency'",
+        src)
+
+# ── 8. /kaggle/working générique ─────────────────────────────────────────────
 src = src.replace("'/kaggle/working'", f"'{wk}'")
 src = src.replace('"/kaggle/working"', f'"{wk}"')
 src = re.sub(r"(['\"])/kaggle/working", lambda m: m.group(1) + wk, src)
 
-# ── 8. log_experiment — filet de sécurité ────────────────────────────────────
+# ── 9. log_experiment — filet de sécurité ────────────────────────────────────
 src = re.sub(
-    r"log_experiment\(dir_path\s*=\s*['\"][^'\"]*['\"]",
-    f"log_experiment(dir_path='{results_dir}/ms-ips'",
-    src)
-
-# ── 9. saliency_ddr / saliency_rsna ──────────────────────────────────────────
-src = re.sub(
-    r"save_dir\s*=\s*['\"][^'\"]*saliency_ddr['\"]",
-    f"save_dir='{results_dir}/ms-ips/ddr/saliency_ddr'",
-    src)
-src = re.sub(
-    r"save_dir\s*=\s*['\"][^'\"]*saliency_rsna['\"]",
-    f"save_dir='{results_dir}/ms-ips/rsna/saliency_rsna'",
+    r"log_experiment\(([^)]*)\)",
+    lambda m: (
+        f"log_experiment(dir_path='{results_dir}/hmsips/node21')"
+        if "node21" in m.group(0) else
+        f"log_experiment(dir_path='{results_dir}/hmsips/ddr')"
+        if "ddr" in m.group(0) else
+        f"log_experiment(dir_path='{results_dir}/hmsips/rsna')"
+        if "rsna" in m.group(0) else
+        f"log_experiment(dir_path='{results_dir}/hmsips')"
+    ),
     src)
 
 # ── 10. tqdm.notebook → tqdm ─────────────────────────────────────────────────
@@ -271,11 +271,10 @@ with open(script, "w") as f:
 print(f"  !pip install supprimés   (codecarbon déjà installé par bash)")
 print(f"  /kaggle/input/datasets  → {dr}/")
 print(f"  /kaggle/working         → {wk}")
-print(f"  ms-ips/node21           → {results_dir}/ms-ips/node21/")
-print(f"  ms-ips/ddr              → {results_dir}/ms-ips/ddr/")
-print(f"  ms-ips/rsna             → {results_dir}/ms-ips/rsna/")
-print(f"  saliency_ddr            → {results_dir}/ms-ips/ddr/saliency_ddr/")
-print(f"  saliency_rsna           → {results_dir}/ms-ips/rsna/saliency_rsna/")
+print(f"  hmsips/node21           → {results_dir}/hmsips/node21/")
+print(f"  hmsips/ddr              → {results_dir}/hmsips/ddr/")
+print(f"  hmsips/rsna             → {results_dir}/hmsips/rsna/")
+print(f"  saliency/*              → {results_dir}/hmsips/*/saliency/")
 print("  Patch OK.")
 PYEOF
 
@@ -303,7 +302,7 @@ if [ $EXIT_CODE -eq 0 ]; then
     echo "── Résultats dans $RESULTS_DIR ──"
 
     for DATASET in node21 ddr rsna; do
-        DDIR="$RESULTS_DIR/ms-ips/$DATASET"
+        DDIR="$RESULTS_DIR/hmsips/$DATASET"
         echo ""
         echo "  [$DATASET]"
 
@@ -327,7 +326,7 @@ if [ $EXIT_CODE -eq 0 ]; then
             | while read f; do echo "      $(basename "$f")"; done
 
         echo "    Saliency :"
-        SDIR="$DDIR/saliency_${DATASET}"
+        SDIR="$DDIR/saliency"
         PNG=$(find "$SDIR" -name "*.png" 2>/dev/null | wc -l)
         NPY=$(find "$SDIR" -name "*.npy" 2>/dev/null | wc -l)
         CSV=$(find "$SDIR" -name "*.csv" 2>/dev/null | wc -l)
@@ -339,7 +338,7 @@ if [ $EXIT_CODE -eq 0 ]; then
 else
     echo ""
     echo "[ERROR] Échec — exit code $EXIT_CODE"
-    echo "Log : $WORK_DIR/logs/${SLURM_JOB_NAME:-msips}_${SLURM_JOB_ID:-0}.err"
+    echo "Log : $WORK_DIR/logs/${SLURM_JOB_NAME:-hmsips}_${SLURM_JOB_ID:-0}.err"
 fi
 
 deactivate
