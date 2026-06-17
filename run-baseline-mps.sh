@@ -1,30 +1,23 @@
 #!/bin/bash
 # =============================================================================
-#  run-master2-qmix-standard-ce.sh — Script HPC pour le notebook QMix + Standard CE (DDR)
+#  run-baseline.sh — Script HPC pour le notebook Baseline (NODE21 + DDR + RSNA)
 #
 #  Prérequis :
-#    - Ce script, le notebook et kaggle.json sont dans la branche kaggle-notebooks
+#    - Ce script, le notebook et kaggle.json dans la branche kaggle-notebooks
 #
-#  Dataset utilisé :
+#  Datasets utilisés :
+#    - pshikk/node-21-dataset-untampered              (NODE21)
 #    - samriddhibagchi/ddr-dataset-credits-to-authors (DDR)
+#    - iamtapendu/rsna-pneumonia-processed-dataset    (RSNA)
 #
 #  Sorties centralisées dans :
-#    ~/ips-project/results/master2-qmix-standard-ce/exp_<NUM>/
-#      ├── runs/ce_ddr_v1/
-#      │     ├── ce_ddr_v1.pt
-#      │     ├── ce_ddr_v1_weights.pt
-#      │     ├── ce_ddr_v1_history.json
-#      │     ├── ce_ddr_v1_experiment.csv
-#      │     └── ce_ddr_v1_confusion_matrix.png
-#      └── runs/qmix_ddr_v1/
-#            ├── qmix_ddr_v1.pt
-#            ├── qmix_ddr_v1_weights.pt
-#            ├── qmix_ddr_v1_history.json
-#            ├── qmix_ddr_v1_experiment.csv
-#            └── qmix_ddr_v1_confusion_matrix.png
+#    ~/ips-project/results/baseline/
+#      ├── baseline/node21/   → *.pt, *_history.json, *_experiment.csv, confusion_matrix.png
+#      ├── baseline/ddr/      → *.pt, *_history.json, *_experiment.csv, confusion_matrix.png
+#      └── baseline/rsna/     → *.pt, *_history.json, *_experiment.csv, confusion_matrix.png
 # =============================================================================
 
-#SBATCH --job-name=ips_experiment
+#SBATCH --job-name=baseline_experiment
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 #SBATCH --time=120:00:00
@@ -43,13 +36,13 @@ set -euo pipefail
 #  CONFIGURATION
 # =============================================================================
 
-NOTEBOOK="master2-qmix-standard-ce.ipynb"
+NOTEBOOK="baseline-mps-gx.ipynb"
 
 DATASETS=(
+    "pshikk/node-21-dataset-untampered"
     "samriddhibagchi/ddr-dataset-credits-to-authors"
+    "iamtapendu/rsna-pneumonia-processed-dataset"
 )
-
-EXP_NUM="001"
 
 # =============================================================================
 #  Chemins cluster
@@ -60,7 +53,7 @@ WORK_KAGGLE="$WORK_DIR/outputs"
 BACKBONE_CACHE="$WORK_DIR/backbone_cache"
 
 NOTEBOOK_NAME="${NOTEBOOK%.ipynb}"
-RESULTS_DIR="$WORK_DIR/results/$NOTEBOOK_NAME/exp_${EXP_NUM}"
+RESULTS_DIR="$WORK_DIR/results/$NOTEBOOK_NAME"
 
 export TORCH_HOME="$BACKBONE_CACHE"
 export HF_HOME="$BACKBONE_CACHE"
@@ -86,9 +79,11 @@ mkdir -p "$DATA_ROOT"
 mkdir -p "$WORK_KAGGLE"
 mkdir -p "$BACKBONE_CACHE"
 
-# Sous-dossiers alignés sur les CKPT_DIR définis dans le notebook
-mkdir -p "$RESULTS_DIR/runs/ce_ddr_v1"
-mkdir -p "$RESULTS_DIR/runs/qmix_ddr_v1"
+# Sous-dossiers alignés sur les SAVE_PATH définis dans le notebook
+# Pas de saliency pour le baseline (pas d'IPS)
+mkdir -p "$RESULTS_DIR/baseline/node21"
+mkdir -p "$RESULTS_DIR/baseline/ddr"
+mkdir -p "$RESULTS_DIR/baseline/rsna"
 
 cd "$WORK_DIR"
 
@@ -107,7 +102,6 @@ echo "[OK] Kaggle credentials : $SCRIPT_DIR/kaggle.json"
 
 # =============================================================================
 #  Virtualenv + dépendances
-#  codecarbon installé ici — pas besoin de !pip install dans le notebook
 # =============================================================================
 VENV_DIR="$WORK_DIR/venv"
 if [ ! -d "$VENV_DIR" ]; then
@@ -119,7 +113,6 @@ source "$VENV_DIR/bin/activate"
 echo "[SETUP] Installation des dépendances..."
 pip install --upgrade pip --quiet
 
-
 pip install --quiet \
     torch \
     torchvision \
@@ -129,6 +122,8 @@ pip install --quiet \
     numpy \
     scikit-learn \
     matplotlib \
+    SimpleITK \
+    h5py \
     Pillow \
     PyYAML \
     kaggle \
@@ -190,13 +185,15 @@ results_dir = "$RESULTS_DIR"
 with open(script) as f:
     src = f.read()
 
-# ── 1. Supprimer les lignes !pip install (magics Jupyter) ────────────────────
+# ── 1. Supprimer toutes les lignes !pip install ───────────────────────────────
 src = re.sub(r'^.*!pip install.*$', '', src, flags=re.MULTILINE)
 
 # ── 2. Datasets ──────────────────────────────────────────────────────────────
 for slug in [
+    "pshikk/node-21-dataset-untampered",
     "samriddhibagchi/ddr-dataset-credits-to-authors/DDR-dataset",
     "samriddhibagchi/ddr-dataset-credits-to-authors",
+    "iamtapendu/rsna-pneumonia-processed-dataset",
 ]:
     src = src.replace(
         f"'/kaggle/input/datasets/{slug}'", f"'{dr}/{slug}'")
@@ -213,61 +210,53 @@ src = re.sub(
 src = src.replace("'/kaggle/working/backbone_cache'", f"'{bc}'")
 src = src.replace('"/kaggle/working/backbone_cache"', f'"{bc}"')
 
-# ── 4. CKPT_DIR_CE ───────────────────────────────────────────────────────────
+# ── 4. SAVE_PATH node21 ──────────────────────────────────────────────────────
 src = src.replace(
-    "'/kaggle/working/runs/ce_ddr_v1'",
-    f"'{results_dir}/runs/ce_ddr_v1'")
+    "'/kaggle/working/baseline/node21'",
+    f"'{results_dir}/baseline/node21'")
 src = src.replace(
-    '"/kaggle/working/runs/ce_ddr_v1"',
-    f'"{results_dir}/runs/ce_ddr_v1"')
+    '"/kaggle/working/baseline/node21"',
+    f'"{results_dir}/baseline/node21"')
 
-# ── 5. CKPT_DIR_QMIX ─────────────────────────────────────────────────────────
+# ── 5. SAVE_PATH ddr ─────────────────────────────────────────────────────────
 src = src.replace(
-    "'/kaggle/working/runs/qmix_ddr_v1'",
-    f"'{results_dir}/runs/qmix_ddr_v1'")
+    "'/kaggle/working/baseline/ddr'",
+    f"'{results_dir}/baseline/ddr'")
 src = src.replace(
-    '"/kaggle/working/runs/qmix_ddr_v1"',
-    f'"{results_dir}/runs/qmix_ddr_v1"')
+    '"/kaggle/working/baseline/ddr"',
+    f'"{results_dir}/baseline/ddr"')
 
-# ── 6. /kaggle/working générique ─────────────────────────────────────────────
+# ── 6. SAVE_PATH rsna ────────────────────────────────────────────────────────
+src = src.replace(
+    "'/kaggle/working/baseline/rsna'",
+    f"'{results_dir}/baseline/rsna'")
+src = src.replace(
+    '"/kaggle/working/baseline/rsna"',
+    f'"{results_dir}/baseline/rsna"')
+
+# ── 7. /kaggle/working générique ─────────────────────────────────────────────
 src = src.replace("'/kaggle/working'", f"'{wk}'")
 src = src.replace('"/kaggle/working"', f'"{wk}"')
 src = re.sub(r"(['\"])/kaggle/working", lambda m: m.group(1) + wk, src)
 
-# ── 7. log_experiment CE ─────────────────────────────────────────────────────
+# ── 8. log_experiment — filet de sécurité ────────────────────────────────────
 src = re.sub(
-    r"(ce_engine\.log_experiment\()CKPT_DIR_CE\)",
-    f"\\1'{results_dir}/runs/ce_ddr_v1')",
+    r"log_experiment\(([^)]*)\)",
+    lambda m: (
+        f"log_experiment(dir_path='{results_dir}/baseline/node21')"
+        if "node21" in m.group(0) else
+        f"log_experiment(dir_path='{results_dir}/baseline/ddr')"
+        if "ddr" in m.group(0) else
+        f"log_experiment(dir_path='{results_dir}/baseline/rsna')"
+        if "rsna" in m.group(0) else
+        f"log_experiment(dir_path='{results_dir}/baseline')"
+    ),
     src)
 
-# ── 8. log_experiment QMix ───────────────────────────────────────────────────
-src = re.sub(
-    r"(qm_engine\.log_experiment\()CKPT_DIR_QMIX\)",
-    f"\\1'{results_dir}/runs/qmix_ddr_v1')",
-    src)
-
-# Filet de sécurité log_experiment
-src = re.sub(
-    r"log_experiment\(dir_path\s*=\s*['\"][^'\"]*['\"]",
-    f"log_experiment(dir_path='{results_dir}/runs'",
-    src)
-
-# ── 9. save_path confusion matrix CE ─────────────────────────────────────────
-src = re.sub(
-    r"save_path\s*=\s*['\"][^'\"]*ce_ddr_v1_confusion_matrix\.png['\"]",
-    f"save_path='{results_dir}/runs/ce_ddr_v1/ce_ddr_v1_confusion_matrix.png'",
-    src)
-
-# ── 10. save_path confusion matrix QMix ──────────────────────────────────────
-src = re.sub(
-    r"save_path\s*=\s*['\"][^'\"]*qmix_ddr_v1_confusion_matrix\.png['\"]",
-    f"save_path='{results_dir}/runs/qmix_ddr_v1/qmix_ddr_v1_confusion_matrix.png'",
-    src)
-
-# ── 11. tqdm.notebook → tqdm ─────────────────────────────────────────────────
+# ── 9. tqdm.notebook → tqdm ──────────────────────────────────────────────────
 src = src.replace("from tqdm.notebook import tqdm", "from tqdm import tqdm")
 
-# ── 12. plt.show() → plt.close('all') ────────────────────────────────────────
+# ── 10. plt.show() → plt.close('all') ────────────────────────────────────────
 src = re.sub(r'\bplt\.show\(\)', "plt.close('all')", src)
 
 with open(script, "w") as f:
@@ -276,8 +265,9 @@ with open(script, "w") as f:
 print(f"  !pip install supprimés   (codecarbon déjà installé par bash)")
 print(f"  /kaggle/input/datasets  → {dr}/")
 print(f"  /kaggle/working         → {wk}")
-print(f"  runs/ce_ddr_v1          → {results_dir}/runs/ce_ddr_v1/")
-print(f"  runs/qmix_ddr_v1        → {results_dir}/runs/qmix_ddr_v1/")
+print(f"  baseline/node21         → {results_dir}/baseline/node21/")
+print(f"  baseline/ddr            → {results_dir}/baseline/ddr/")
+print(f"  baseline/rsna           → {results_dir}/baseline/rsna/")
 print("  Patch OK.")
 PYEOF
 
@@ -304,35 +294,37 @@ if [ $EXIT_CODE -eq 0 ]; then
     echo ""
     echo "── Résultats dans $RESULTS_DIR ──"
 
-    for RUN in ce_ddr_v1 qmix_ddr_v1; do
-        RDIR="$RESULTS_DIR/runs/$RUN"
+    for DATASET in node21 ddr rsna; do
+        DDIR="$RESULTS_DIR/baseline/$DATASET"
         echo ""
-        echo "  [$RUN]"
+        echo "  [$DATASET]"
 
         echo "    Checkpoints :"
-        find "$RDIR" -maxdepth 1 -name "*.pt" 2>/dev/null | sort \
+        find "$DDIR" -maxdepth 1 -name "*.pt" 2>/dev/null | sort \
             | while read f; do
                 printf "      %-55s  %s MB\n" \
                     "$(basename "$f")" "$(du -m "$f" | cut -f1)"
               done
 
         echo "    History :"
-        find "$RDIR" -maxdepth 1 -name "*_history.json" 2>/dev/null | sort \
+        find "$DDIR" -maxdepth 1 -name "*_history.json" 2>/dev/null | sort \
             | while read f; do echo "      $(basename "$f")"; done
 
         echo "    Experiments :"
-        find "$RDIR" -maxdepth 1 -name "*_experiment.csv" 2>/dev/null | sort \
+        find "$DDIR" -maxdepth 1 -name "*_experiment.csv" 2>/dev/null | sort \
             | while read f; do echo "      $(basename "$f")"; done
 
         echo "    Confusion matrix :"
-        find "$RDIR" -maxdepth 1 -name "*_confusion_matrix.png" 2>/dev/null | sort \
+        find "$DDIR" -maxdepth 1 -name "*_confusion_matrix.png" 2>/dev/null | sort \
             | while read f; do echo "      $(basename "$f")"; done
+
+        # Pas de saliency pour le baseline
     done
 
 else
     echo ""
     echo "[ERROR] Échec — exit code $EXIT_CODE"
-    echo "Log : $WORK_DIR/logs/${SLURM_JOB_NAME:-ips}_${SLURM_JOB_ID:-0}.err"
+    echo "Log : $WORK_DIR/logs/${SLURM_JOB_NAME:-baseline}_${SLURM_JOB_ID:-0}.err"
 fi
 
 deactivate
