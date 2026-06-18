@@ -235,33 +235,39 @@ src = src.replace('"/kaggle/working"', f'"{wk}"')
 src = re.sub(r"(['\"])/kaggle/working", lambda m: m.group(1) + wk, src)
 
 # ── 7. log_experiment CE ─────────────────────────────────────────────────────
+# IMPORTANT : on utilise une fonction lambda comme remplacement, et NON une
+# chaine contenant "\\1". re.sub interprète les backslashes dans une chaine
+# de remplacement (\1, \g<1>, etc.) — combiné à un f-string, cela pouvait
+# produire des octets de contrôle invisibles (ex: U+0001) dans le script
+# généré, provoquant un "SyntaxError: invalid non-printable character".
+# Une fonction lambda est inséré littéralement, sans aucune réinterprétation.
 src = re.sub(
-    r"(ce_engine\.log_experiment\()CKPT_DIR_CE\)",
-    f"\\1'{results_dir}/runs/ce_ddr_v1')",
+    r"ce_engine\.log_experiment\(CKPT_DIR_CE\)",
+    lambda m: f"ce_engine.log_experiment('{results_dir}/runs/ce_ddr_v1')",
     src)
 
 # ── 8. log_experiment QMix ───────────────────────────────────────────────────
 src = re.sub(
-    r"(qm_engine\.log_experiment\()CKPT_DIR_QMIX\)",
-    f"\\1'{results_dir}/runs/qmix_ddr_v1')",
+    r"qm_engine\.log_experiment\(CKPT_DIR_QMIX\)",
+    lambda m: f"qm_engine.log_experiment('{results_dir}/runs/qmix_ddr_v1')",
     src)
 
-# Filet de sécurité log_experiment
+# Filet de sécurité log_experiment (idem : lambda, pas de backreference)
 src = re.sub(
-    r"log_experiment\(dir_path\s*=\s*['\"][^'\"]*['\"]",
-    f"log_experiment(dir_path='{results_dir}/runs'",
+    r"log_experiment\(dir_path\s*=\s*['\"][^'\"]*['\"]\)",
+    lambda m: f"log_experiment(dir_path='{results_dir}/runs')",
     src)
 
 # ── 9. save_path confusion matrix CE ─────────────────────────────────────────
 src = re.sub(
     r"save_path\s*=\s*['\"][^'\"]*ce_ddr_v1_confusion_matrix\.png['\"]",
-    f"save_path='{results_dir}/runs/ce_ddr_v1/ce_ddr_v1_confusion_matrix.png'",
+    lambda m: f"save_path='{results_dir}/runs/ce_ddr_v1/ce_ddr_v1_confusion_matrix.png'",
     src)
 
 # ── 10. save_path confusion matrix QMix ──────────────────────────────────────
 src = re.sub(
     r"save_path\s*=\s*['\"][^'\"]*qmix_ddr_v1_confusion_matrix\.png['\"]",
-    f"save_path='{results_dir}/runs/qmix_ddr_v1/qmix_ddr_v1_confusion_matrix.png'",
+    lambda m: f"save_path='{results_dir}/runs/qmix_ddr_v1/qmix_ddr_v1_confusion_matrix.png'",
     src)
 
 # ── 11. tqdm.notebook → tqdm ─────────────────────────────────────────────────
@@ -280,6 +286,26 @@ print(f"  runs/ce_ddr_v1          → {results_dir}/runs/ce_ddr_v1/")
 print(f"  runs/qmix_ddr_v1        → {results_dir}/runs/qmix_ddr_v1/")
 print("  Patch OK.")
 PYEOF
+
+# =============================================================================
+#  Vérification post-patch : syntaxe valide + absence de caractères de contrôle
+#  (ajouté pour détecter immédiatement toute corruption introduite par le
+#  patch ci-dessus, plutôt que d'échouer après plusieurs heures de calcul)
+# =============================================================================
+echo ""
+echo "[CHECK] Validation du script généré..."
+
+if grep -qP '[\x00-\x08\x0b\x0c\x0e-\x1f]' "$SCRIPT_PY"; then
+    echo "[ERROR] Caractères de contrôle non imprimables détectés dans $SCRIPT_PY :"
+    grep -naP '[\x00-\x08\x0b\x0c\x0e-\x1f]' "$SCRIPT_PY"
+    exit 1
+fi
+
+if ! python -m py_compile "$SCRIPT_PY"; then
+    echo "[ERROR] Le script généré contient une erreur de syntaxe — voir ci-dessus."
+    exit 1
+fi
+echo "[OK] Script valide."
 
 # =============================================================================
 #  Lancement
