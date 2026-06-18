@@ -66,6 +66,11 @@ export TORCH_HOME="$BACKBONE_CACHE"
 export HF_HOME="$BACKBONE_CACHE"
 export HUGGINGFACE_HUB_CACHE="$BACKBONE_CACHE"
 
+# Mitigation fragmentation mémoire CUDA (cf. torch.OutOfMemoryError)
+# Doit être défini avant toute initialisation de l'allocateur CUDA par PyTorch,
+# donc avant le lancement du script Python (le "import torch" du notebook).
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
 # =============================================================================
 #  Init
 # =============================================================================
