@@ -1,0 +1,4 @@
+[NbConvertApp] Converting notebook /users/jlacmou/supports/aubin/master-research-codes/20260628-ips-project/../ips-self-attention.ipynb to script
+/users/jlacmou/supports/aubin/master-research-codes/20260628-ips-project/20260628-ips-project/venv/share/jupyter/nbconvert/templates/python/index.py.j2:61: UserWarning: IPython is needed to transform IPython syntax to pure Python. Install ipython if you need this functionality.
+[NbConvertApp] Writing 125726 bytes to 20260628-ips-project/_run_ips-self-attention.py
+[codecarbon WARNING @ 16:34:48] Multiple instances of codecarbon are allowed to run at the same time.

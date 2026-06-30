@@ -1,0 +1,1738 @@
+=========================================
+Job      : hmsips_experiment  (463340)
+Node     : bigpu04
+Started  : Sun Jun 28 04:29:00 PM CEST 2026
+Notebook : h-ms-ips.ipynb
+Results  : 20260628-ips-project/results/h-ms-ips
+=========================================
+[OK] Kaggle credentials : /users/jlacmou/supports/aubin/master-research-codes/20260628-ips-project/../kaggle.json
+[SETUP] Installation des dépendances...
+[CHECK] Vérification des datasets...
+  [OK]      pshikk/node-21-dataset-untampered
+  [OK]      samriddhibagchi/ddr-dataset-credits-to-authors
+  [OK]      iamtapendu/rsna-pneumonia-processed-dataset
+
+[CONVERT] Notebook → script Python...
+[OK] Script généré : 20260628-ips-project/_run_h-ms-ips.py
+[PATCH] Remplacement des chemins...
+  !pip install supprimés   (codecarbon déjà installé par bash)
+  /kaggle/input/datasets  → 20260628-ips-project/data/datasets/
+  /kaggle/working         → 20260628-ips-project/outputs
+  hmsips/node21           → 20260628-ips-project/results/h-ms-ips/hmsips/node21/
+  hmsips/ddr              → 20260628-ips-project/results/h-ms-ips/hmsips/ddr/
+  hmsips/rsna             → 20260628-ips-project/results/h-ms-ips/hmsips/rsna/
+  saliency/*              → 20260628-ips-project/results/h-ms-ips/hmsips/*/saliency/
+  Patch OK.
+
+[RUN] Démarrage — Sun Jun 28 04:29:05 PM CEST 2026
+=========================================
+Device  : cuda
+GPUs disponibles : 1
+  GPU 0 : Tesla V100-PCIE-32GB — 34.1 GB
+PyTorch : 2.12.1+cu126
+EfficientNet-B0 : disponible ✓
+NODE21 — zones grossières : 16
+NODE21 — fins par zone    : 4
+NODE21 — candidats fins   : 16  (4×4)
+NODE21 — M final          : 10
+DDR — zones grossières : 16
+DDR — fins par zone    : 4
+DDR — candidats fins   : 16  (4×4)
+DDR — M final          : 10
+RSNA HMSIPS — zones grossières : 16
+RSNA HMSIPS — fins par zone    : 4
+RSNA HMSIPS — candidats fins   : 16  (4×4)
+RSNA HMSIPS — M final          : 10
+RSNA HMSIPS — n_chan_in        : 1  (grayscale)
+Tasks     : ['pneumonia']
+Métriques : ['accuracy', 'auc', 'f1', 'precision', 'recall']
+Train : 3902 images (pos=915, neg=2987)
+Test : 980 images (pos=219, neg=761)
+
+Input shape : torch.Size([1, 1024, 1024])
+Label       : 1
+Range       : [-1.000, 1.000]
+[DDRDatasetHMSIPS] split=train |  6260 imgs | C0=3133, C1=315, C2=2238, C3=118, C4=456
+[DDRDatasetHMSIPS] split=valid |  2503 imgs | C0=1253, C1=126, C2=895, C3=47, C4=182
+[DDRDatasetHMSIPS] split=test  |  3759 imgs | C0=1880, C1=189, C2=1344, C3=71, C4=275
+
+Input shape : torch.Size([3, 896, 896])
+Label       : 0
+Range       : [-2.031, 0.907]
+Labels uniques (100 premiers) : [0]
+Train : 20005 images | pos=4509 (22.5%) | neg=15496 (77.5%) | ratio=3.44:1
+Test  : 6679 images | pos=1503 (22.5%) | neg=5176 (77.5%) | ratio=3.44:1
+
+Input shape : torch.Size([1, 1024, 1024])
+Label       : 0
+Range       : [-1.000, 0.922]
+Labels uniques (200 premiers) : [0, 1]
+Train : 3902 images (pos=915, neg=2987)
+Test : 980 images (pos=219, neg=761)
+DataFactory ✓ — dataset=hmsips_node21
+  Train : 3902 images
+  Test  : 980 images
+  Loaders créés — batch_size=16
+  Train batches : 244
+  Test batches  : 62
+
+Batch shape : torch.Size([16, 1, 1024, 1024])
+Label       : tensor([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0])
+[PatchEncoder] ImageNet weights
+Encodeur        : resnet18
+enc_dim         : 512
+N_coarse        : 16
+N_fine          : 64
+n_fine_per_zone : 4
+N_cand fixe     : 16
+
+ips() — batch=4 :
+  mem_patches   : (4, 10, 1, 128, 128)
+  mem_coords    : (4, 10, 2)
+  coarse_coords : (4, 4, 2)
+  nodule : (4, 2)
+
+Params : 14.586 M
+Logger               : ✓
+get_total_vram_mb    : ✓  (guard CPU + multi-GPU)
+adjust_learning_rate : ✓
+Logger DDR — metrics : [{'accuracy': 1.0, 'kappa': 1.0, 'f1': 1.0}]
+[PatchEncoder] ImageNet weights
+UniversalEngineHMSIPS instancié ✓
+Optimizer : AdamW
+Critères  : ['nodule']
+History keys (train) : ['loss', 'accuracy', 'auc', 'f1', 'precision', 'recall']
+
+==================================================
+Run        : hmsips_node21_v1
+Paramètres : 14.586 M
+Encodeur   : resnet18 (n_res_blocks=4)
+==================================================
+
+show_saliency + save_saliency + show_saliency_from_disk attachés ✓
+Patch CodeCarbon appliqué à UniversalEngineHMSIPS ✓
+  fit()            → tracking CO₂ par époque
+  log_experiment(dir_path='20260628-ips-project/results/h-ms-ips/hmsips') → colonnes total_co2_kg / co2_per_epoch_kg / co2_kg
+plot_confusion_matrix attaché à UniversalEngineHMSIPS ✓
+Train : 3902 images (pos=915, neg=2987)
+Test : 980 images (pos=219, neg=761)
+DataFactory ✓ — dataset=hmsips_node21
+  Train : 3902 images
+  Test  : 980 images
+  Loaders créés — batch_size=16
+  Train batches : 244
+  Test batches  : 62
+[PatchEncoder] ImageNet weights
+UniversalEngineHMSIPS instancié ✓
+Optimizer : AdamW
+Critères  : ['nodule']
+History keys (train) : ['loss', 'accuracy', 'auc', 'f1', 'precision', 'recall']
+Train Epoch: 1
+task: nodule, loss: 0.39445, accuracy: 0.79959, auc: 0.89447, f1: 0.66638, precision: 0.54654, recall: 0.85355
+avg loss: 0.39445, lr: 0.000010
+
+Test Epoch: 1
+task: nodule, loss: 0.03186, accuracy: 0.99388, auc: 0.99962, f1: 0.98630, precision: 0.98630, recall: 0.98630
+avg loss: 0.03186
+
+  CO₂ époque 1 : 0.000355 kg
+Train Epoch: 2
+task: nodule, loss: 0.03809, accuracy: 0.98872, auc: 0.99894, f1: 0.97596, precision: 0.97596, recall: 0.97596
+avg loss: 0.03809, lr: 0.000020
+
+Test Epoch: 2
+task: nodule, loss: 0.00462, accuracy: 0.99898, auc: 0.99999, f1: 0.99771, precision: 1.00000, recall: 0.99543
+avg loss: 0.00462
+
+  CO₂ époque 2 : 0.000352 kg
+Train Epoch: 3
+task: nodule, loss: 0.01033, accuracy: 0.99667, auc: 0.99993, f1: 0.99291, precision: 0.99129, recall: 0.99454
+avg loss: 0.01033, lr: 0.000030
+
+Test Epoch: 3
+task: nodule, loss: 0.00401, accuracy: 0.99796, auc: 0.99999, f1: 0.99541, precision: 1.00000, recall: 0.99087
+avg loss: 0.00401
+
+  CO₂ époque 3 : 0.000356 kg
+Train Epoch: 4
+task: nodule, loss: 0.01844, accuracy: 0.99206, auc: 0.99972, f1: 0.98307, precision: 0.98253, recall: 0.98361
+avg loss: 0.01844, lr: 0.000040
+
+Test Epoch: 4
+task: nodule, loss: 0.00927, accuracy: 0.99694, auc: 1.00000, f1: 0.99320, precision: 0.98649, recall: 1.00000
+avg loss: 0.00927
+
+  CO₂ époque 4 : 0.000355 kg
+Train Epoch: 5
+task: nodule, loss: 0.02228, accuracy: 0.99154, auc: 0.99962, f1: 0.98196, precision: 0.98249, recall: 0.98142
+avg loss: 0.02228, lr: 0.000050
+
+Test Epoch: 5
+task: nodule, loss: 0.00396, accuracy: 0.99796, auc: 1.00000, f1: 0.99541, precision: 1.00000, recall: 0.99087
+avg loss: 0.00396
+
+  CO₂ époque 5 : 0.000354 kg
+Train Epoch: 6
+task: nodule, loss: 0.01301, accuracy: 0.99590, auc: 0.99985, f1: 0.99126, precision: 0.99126, recall: 0.99126
+avg loss: 0.01301, lr: 0.000060
+
+Test Epoch: 6
+task: nodule, loss: 0.00640, accuracy: 0.99898, auc: 0.99998, f1: 0.99771, precision: 1.00000, recall: 0.99543
+avg loss: 0.00640
+
+  CO₂ époque 6 : 0.000353 kg
+Train Epoch: 7
+task: nodule, loss: 0.01002, accuracy: 0.99744, auc: 0.99964, f1: 0.99455, precision: 0.99238, recall: 0.99672
+avg loss: 0.01002, lr: 0.000070
+
+Test Epoch: 7
+task: nodule, loss: 0.00118, accuracy: 0.99898, auc: 1.00000, f1: 0.99772, precision: 0.99545, recall: 1.00000
+avg loss: 0.00118
+
+  CO₂ époque 7 : 0.000354 kg
+Train Epoch: 8
+task: nodule, loss: 0.01666, accuracy: 0.99462, auc: 0.99972, f1: 0.98852, precision: 0.98906, recall: 0.98798
+avg loss: 0.01666, lr: 0.000080
+
+Test Epoch: 8
+task: nodule, loss: 0.27539, accuracy: 0.92041, auc: 0.99148, f1: 0.78333, precision: 1.00000, recall: 0.64384
+avg loss: 0.27539
+
+  CO₂ époque 8 : 0.000354 kg
+Train Epoch: 9
+task: nodule, loss: 0.03365, accuracy: 0.99001, auc: 0.99812, f1: 0.97858, precision: 0.98344, recall: 0.97377
+avg loss: 0.03365, lr: 0.000090
+
+Test Epoch: 9
+task: nodule, loss: 0.00029, accuracy: 1.00000, auc: 1.00000, f1: 1.00000, precision: 1.00000, recall: 1.00000
+avg loss: 0.00029
+
+  CO₂ époque 9 : 0.000357 kg
+Train Epoch: 10
+task: nodule, loss: 0.03047, accuracy: 0.99001, auc: 0.99909, f1: 0.97877, precision: 0.97505, recall: 0.98251
+avg loss: 0.03047, lr: 0.000100
+
+Test Epoch: 10
+task: nodule, loss: 0.00706, accuracy: 0.99898, auc: 0.99995, f1: 0.99771, precision: 1.00000, recall: 0.99543
+avg loss: 0.00706
+
+  CO₂ époque 10 : 0.000356 kg
+Train Epoch: 11
+task: nodule, loss: 0.00883, accuracy: 0.99667, auc: 0.99988, f1: 0.99290, precision: 0.99236, recall: 0.99344
+avg loss: 0.00883, lr: 0.000100
+
+Test Epoch: 11
+task: nodule, loss: 0.00096, accuracy: 1.00000, auc: 1.00000, f1: 1.00000, precision: 1.00000, recall: 1.00000
+avg loss: 0.00096
+
+  CO₂ époque 11 : 0.000358 kg
+Train Epoch: 12
+task: nodule, loss: 0.00830, accuracy: 0.99692, auc: 0.99995, f1: 0.99344, precision: 0.99344, recall: 0.99344
+avg loss: 0.00830, lr: 0.000099
+
+Test Epoch: 12
+task: nodule, loss: 0.00527, accuracy: 0.99796, auc: 0.99999, f1: 0.99541, precision: 1.00000, recall: 0.99087
+avg loss: 0.00527
+
+  CO₂ époque 12 : 0.000354 kg
+Train Epoch: 13
+task: nodule, loss: 0.03852, accuracy: 0.98770, auc: 0.99833, f1: 0.97383, precision: 0.97171, recall: 0.97596
+avg loss: 0.03852, lr: 0.000099
+
+Test Epoch: 13
+task: nodule, loss: 0.04894, accuracy: 0.97959, auc: 1.00000, f1: 0.95633, precision: 0.91632, recall: 1.00000
+avg loss: 0.04894
+
+  CO₂ époque 13 : 0.000355 kg
+Train Epoch: 14
+task: nodule, loss: 0.03044, accuracy: 0.99180, auc: 0.99843, f1: 0.98257, precision: 0.97937, recall: 0.98579
+avg loss: 0.03044, lr: 0.000098
+
+Test Epoch: 14
+task: nodule, loss: 0.01779, accuracy: 0.99490, auc: 0.99998, f1: 0.98845, precision: 1.00000, recall: 0.97717
+avg loss: 0.01779
+
+  CO₂ époque 14 : 0.000355 kg
+Train Epoch: 15
+task: nodule, loss: 0.03511, accuracy: 0.99026, auc: 0.99801, f1: 0.97919, precision: 0.98134, recall: 0.97705
+avg loss: 0.03511, lr: 0.000096
+
+Test Epoch: 15
+task: nodule, loss: 0.00638, accuracy: 0.99796, auc: 0.99995, f1: 0.99541, precision: 1.00000, recall: 0.99087
+avg loss: 0.00638
+
+  CO₂ époque 15 : 0.000355 kg
+Train Epoch: 16
+task: nodule, loss: 0.02338, accuracy: 0.99462, auc: 0.99884, f1: 0.98856, precision: 0.98587, recall: 0.99126
+avg loss: 0.02338, lr: 0.000095
+
+Test Epoch: 16
+task: nodule, loss: 0.01987, accuracy: 0.99388, auc: 1.00000, f1: 0.98611, precision: 1.00000, recall: 0.97260
+avg loss: 0.01987
+
+  CO₂ époque 16 : 0.000358 kg
+Train Epoch: 17
+task: nodule, loss: 0.00910, accuracy: 0.99795, auc: 0.99963, f1: 0.99563, precision: 0.99455, recall: 0.99672
+avg loss: 0.00910, lr: 0.000093
+
+Test Epoch: 17
+task: nodule, loss: 0.00212, accuracy: 0.99898, auc: 1.00000, f1: 0.99772, precision: 0.99545, recall: 1.00000
+avg loss: 0.00212
+
+  CO₂ époque 17 : 0.000359 kg
+Train Epoch: 18
+task: nodule, loss: 0.01164, accuracy: 0.99718, auc: 0.99932, f1: 0.99401, precision: 0.99130, recall: 0.99672
+avg loss: 0.01164, lr: 0.000090
+
+Test Epoch: 18
+task: nodule, loss: 0.00183, accuracy: 1.00000, auc: 1.00000, f1: 1.00000, precision: 1.00000, recall: 1.00000
+avg loss: 0.00183
+
+  CO₂ époque 18 : 0.000358 kg
+Train Epoch: 19
+task: nodule, loss: 0.02585, accuracy: 0.99231, auc: 0.99923, f1: 0.98359, precision: 0.98467, recall: 0.98251
+avg loss: 0.02585, lr: 0.000088
+
+Test Epoch: 19
+task: nodule, loss: 0.00176, accuracy: 0.99898, auc: 1.00000, f1: 0.99772, precision: 0.99545, recall: 1.00000
+avg loss: 0.00176
+
+  CO₂ époque 19 : 0.000358 kg
+Train Epoch: 20
+task: nodule, loss: 0.03652, accuracy: 0.98667, auc: 0.99865, f1: 0.97171, precision: 0.96750, recall: 0.97596
+avg loss: 0.03652, lr: 0.000085
+
+Test Epoch: 20
+task: nodule, loss: 0.09440, accuracy: 0.97245, auc: 0.99935, f1: 0.93462, precision: 0.99485, recall: 0.88128
+avg loss: 0.09440
+
+  CO₂ époque 20 : 0.000357 kg
+Train Epoch: 21
+task: nodule, loss: 0.06170, accuracy: 0.98001, auc: 0.99576, f1: 0.95742, precision: 0.95638, recall: 0.95847
+avg loss: 0.06170, lr: 0.000082
+
+Test Epoch: 21
+task: nodule, loss: 0.04632, accuracy: 0.98367, auc: 0.99995, f1: 0.96209, precision: 1.00000, recall: 0.92694
+avg loss: 0.04632
+
+  CO₂ époque 21 : 0.000356 kg
+Train Epoch: 22
+task: nodule, loss: 0.02422, accuracy: 0.99154, auc: 0.99896, f1: 0.98194, precision: 0.98355, recall: 0.98033
+avg loss: 0.02422, lr: 0.000079
+
+Test Epoch: 22
+task: nodule, loss: 0.01111, accuracy: 0.99694, auc: 1.00000, f1: 0.99310, precision: 1.00000, recall: 0.98630
+avg loss: 0.01111
+
+  CO₂ époque 22 : 0.000354 kg
+Train Epoch: 23
+task: nodule, loss: 0.02092, accuracy: 0.99308, auc: 0.99953, f1: 0.98525, precision: 0.98472, recall: 0.98579
+avg loss: 0.02092, lr: 0.000076
+
+Test Epoch: 23
+task: nodule, loss: 0.01172, accuracy: 0.99490, auc: 0.99995, f1: 0.98851, precision: 0.99537, recall: 0.98174
+avg loss: 0.01172
+
+  CO₂ époque 23 : 0.000356 kg
+Train Epoch: 24
+task: nodule, loss: 0.05705, accuracy: 0.98052, auc: 0.99686, f1: 0.95856, precision: 0.95647, recall: 0.96066
+avg loss: 0.05705, lr: 0.000073
+
+Test Epoch: 24
+task: nodule, loss: 0.04774, accuracy: 0.98776, auc: 0.99893, f1: 0.97222, precision: 0.98592, recall: 0.95890
+avg loss: 0.04774
+
+  CO₂ époque 24 : 0.000354 kg
+Train Epoch: 25
+task: nodule, loss: 0.04607, accuracy: 0.98334, auc: 0.99804, f1: 0.96462, precision: 0.96095, recall: 0.96831
+avg loss: 0.04607, lr: 0.000069
+
+Test Epoch: 25
+task: nodule, loss: 0.03892, accuracy: 0.98673, auc: 0.99902, f1: 0.97025, precision: 0.97248, recall: 0.96804
+avg loss: 0.03892
+
+  CO₂ époque 25 : 0.000354 kg
+Train Epoch: 26
+task: nodule, loss: 0.02995, accuracy: 0.99026, auc: 0.99899, f1: 0.97930, precision: 0.97611, recall: 0.98251
+avg loss: 0.02995, lr: 0.000065
+
+Test Epoch: 26
+task: nodule, loss: 0.05464, accuracy: 0.97959, auc: 0.99834, f1: 0.95261, precision: 0.99015, recall: 0.91781
+avg loss: 0.05464
+
+  CO₂ époque 26 : 0.000357 kg
+Train Epoch: 27
+task: nodule, loss: 0.02885, accuracy: 0.98872, auc: 0.99919, f1: 0.97601, precision: 0.97388, recall: 0.97814
+avg loss: 0.02885, lr: 0.000062
+
+Test Epoch: 27
+task: nodule, loss: 0.02552, accuracy: 0.99286, auc: 0.99886, f1: 0.98405, precision: 0.98182, recall: 0.98630
+avg loss: 0.02552
+
+  CO₂ époque 27 : 0.000358 kg
+Train Epoch: 28
+task: nodule, loss: 0.02755, accuracy: 0.98975, auc: 0.99930, f1: 0.97828, precision: 0.97195, recall: 0.98470
+avg loss: 0.02755, lr: 0.000058
+
+Test Epoch: 28
+task: nodule, loss: 0.03119, accuracy: 0.99184, auc: 0.99931, f1: 0.98182, precision: 0.97738, recall: 0.98630
+avg loss: 0.03119
+
+  CO₂ époque 28 : 0.000353 kg
+Train Epoch: 29
+task: nodule, loss: 0.01851, accuracy: 0.99462, auc: 0.99965, f1: 0.98852, precision: 0.98906, recall: 0.98798
+avg loss: 0.01851, lr: 0.000054
+
+Test Epoch: 29
+task: nodule, loss: 0.05804, accuracy: 0.98367, auc: 0.99950, f1: 0.96476, precision: 0.93191, recall: 1.00000
+avg loss: 0.05804
+
+  CO₂ époque 29 : 0.000354 kg
+Train Epoch: 30
+task: nodule, loss: 0.01936, accuracy: 0.99282, auc: 0.99966, f1: 0.98477, precision: 0.98050, recall: 0.98907
+avg loss: 0.01936, lr: 0.000050
+
+Test Epoch: 30
+task: nodule, loss: 0.03193, accuracy: 0.99184, auc: 0.99841, f1: 0.98165, precision: 0.98618, recall: 0.97717
+avg loss: 0.03193
+
+  CO₂ époque 30 : 0.000354 kg
+Train Epoch: 31
+task: nodule, loss: 0.02086, accuracy: 0.99334, auc: 0.99959, f1: 0.98578, precision: 0.98686, recall: 0.98470
+avg loss: 0.02086, lr: 0.000046
+
+Test Epoch: 31
+task: nodule, loss: 0.03548, accuracy: 0.98673, auc: 0.99920, f1: 0.97092, precision: 0.95175, recall: 0.99087
+avg loss: 0.03548
+
+  CO₂ époque 31 : 0.000356 kg
+Train Epoch: 32
+task: nodule, loss: 0.02946, accuracy: 0.98949, auc: 0.99915, f1: 0.97763, precision: 0.97603, recall: 0.97923
+avg loss: 0.02946, lr: 0.000042
+
+Test Epoch: 32
+task: nodule, loss: 0.02965, accuracy: 0.98673, auc: 0.99936, f1: 0.96984, precision: 0.98585, recall: 0.95434
+avg loss: 0.02965
+
+  CO₂ époque 32 : 0.000355 kg
+Train Epoch: 33
+task: nodule, loss: 0.01812, accuracy: 0.99282, auc: 0.99968, f1: 0.98472, precision: 0.98364, recall: 0.98579
+avg loss: 0.01812, lr: 0.000038
+
+Test Epoch: 33
+task: nodule, loss: 0.02415, accuracy: 0.99184, auc: 0.99959, f1: 0.98182, precision: 0.97738, recall: 0.98630
+avg loss: 0.02415
+
+  CO₂ époque 33 : 0.000355 kg
+Train Epoch: 34
+task: nodule, loss: 0.01826, accuracy: 0.99385, auc: 0.99969, f1: 0.98693, precision: 0.98371, recall: 0.99016
+avg loss: 0.01826, lr: 0.000035
+
+Test Epoch: 34
+task: nodule, loss: 0.01848, accuracy: 0.99184, auc: 0.99971, f1: 0.98174, precision: 0.98174, recall: 0.98174
+avg loss: 0.01848
+
+  CO₂ époque 34 : 0.000355 kg
+Train Epoch: 35
+task: nodule, loss: 0.01687, accuracy: 0.99385, auc: 0.99963, f1: 0.98694, precision: 0.98267, recall: 0.99126
+avg loss: 0.01687, lr: 0.000031
+
+Test Epoch: 35
+task: nodule, loss: 0.03056, accuracy: 0.98878, auc: 0.99975, f1: 0.97436, precision: 0.99524, recall: 0.95434
+avg loss: 0.03056
+
+  CO₂ époque 35 : 0.000354 kg
+Train Epoch: 36
+task: nodule, loss: 0.01289, accuracy: 0.99462, auc: 0.99977, f1: 0.98853, precision: 0.98799, recall: 0.98907
+avg loss: 0.01289, lr: 0.000027
+
+Test Epoch: 36
+task: nodule, loss: 0.01743, accuracy: 0.99388, auc: 0.99981, f1: 0.98624, precision: 0.99078, recall: 0.98174
+avg loss: 0.01743
+
+  CO₂ époque 36 : 0.000358 kg
+Train Epoch: 37
+task: nodule, loss: 0.01190, accuracy: 0.99590, auc: 0.99987, f1: 0.99126, precision: 0.99126, recall: 0.99126
+avg loss: 0.01190, lr: 0.000024
+
+Test Epoch: 37
+task: nodule, loss: 0.01692, accuracy: 0.99490, auc: 0.99984, f1: 0.98866, precision: 0.98198, recall: 0.99543
+avg loss: 0.01692
+
+  CO₂ époque 37 : 0.000352 kg
+Train Epoch: 38
+task: nodule, loss: 0.00625, accuracy: 0.99846, auc: 0.99996, f1: 0.99672, precision: 0.99672, recall: 0.99672
+avg loss: 0.00625, lr: 0.000021
+
+Test Epoch: 38
+task: nodule, loss: 0.02394, accuracy: 0.99388, auc: 0.99977, f1: 0.98643, precision: 0.97758, recall: 0.99543
+avg loss: 0.02394
+
+  CO₂ époque 38 : 0.000359 kg
+Train Epoch: 39
+task: nodule, loss: 0.00461, accuracy: 0.99769, auc: 0.99998, f1: 0.99508, precision: 0.99562, recall: 0.99454
+avg loss: 0.00461, lr: 0.000018
+
+Test Epoch: 39
+task: nodule, loss: 0.01500, accuracy: 0.99592, auc: 0.99985, f1: 0.99091, precision: 0.98643, recall: 0.99543
+avg loss: 0.01500
+
+  CO₂ époque 39 : 0.000357 kg
+Train Epoch: 40
+task: nodule, loss: 0.00692, accuracy: 0.99744, auc: 0.99996, f1: 0.99455, precision: 0.99238, recall: 0.99672
+avg loss: 0.00692, lr: 0.000015
+
+Test Epoch: 40
+task: nodule, loss: 0.02152, accuracy: 0.99388, auc: 0.99973, f1: 0.98630, precision: 0.98630, recall: 0.98630
+avg loss: 0.02152
+
+  CO₂ époque 40 : 0.000356 kg
+Train Epoch: 41
+task: nodule, loss: 0.00657, accuracy: 0.99718, auc: 0.99996, f1: 0.99399, precision: 0.99453, recall: 0.99344
+avg loss: 0.00657, lr: 0.000012
+
+Test Epoch: 41
+task: nodule, loss: 0.01851, accuracy: 0.99388, auc: 0.99971, f1: 0.98636, precision: 0.98190, recall: 0.99087
+avg loss: 0.01851
+
+  CO₂ époque 41 : 0.000355 kg
+Train Epoch: 42
+task: nodule, loss: 0.00379, accuracy: 0.99872, auc: 0.99999, f1: 0.99727, precision: 0.99672, recall: 0.99781
+avg loss: 0.00379, lr: 0.000010
+
+Test Epoch: 42
+task: nodule, loss: 0.01734, accuracy: 0.99592, auc: 0.99966, f1: 0.99083, precision: 0.99539, recall: 0.98630
+avg loss: 0.01734
+
+  CO₂ époque 42 : 0.000357 kg
+Train Epoch: 43
+task: nodule, loss: 0.00351, accuracy: 0.99897, auc: 0.99999, f1: 0.99781, precision: 0.99781, recall: 0.99781
+avg loss: 0.00351, lr: 0.000007
+
+Test Epoch: 43
+task: nodule, loss: 0.01417, accuracy: 0.99490, auc: 0.99980, f1: 0.98861, precision: 0.98636, recall: 0.99087
+avg loss: 0.01417
+
+  CO₂ époque 43 : 0.000359 kg
+Train Epoch: 44
+task: nodule, loss: 0.00270, accuracy: 0.99897, auc: 1.00000, f1: 0.99781, precision: 0.99781, recall: 0.99781
+avg loss: 0.00270, lr: 0.000006
+
+Test Epoch: 44
+task: nodule, loss: 0.01589, accuracy: 0.99490, auc: 0.99981, f1: 0.98861, precision: 0.98636, recall: 0.99087
+avg loss: 0.01589
+
+  CO₂ époque 44 : 0.000352 kg
+Train Epoch: 45
+task: nodule, loss: 0.00295, accuracy: 0.99872, auc: 0.99999, f1: 0.99727, precision: 0.99672, recall: 0.99781
+avg loss: 0.00295, lr: 0.000004
+
+Test Epoch: 45
+task: nodule, loss: 0.01593, accuracy: 0.99490, auc: 0.99980, f1: 0.98861, precision: 0.98636, recall: 0.99087
+avg loss: 0.01593
+
+  CO₂ époque 45 : 0.000352 kg
+Train Epoch: 46
+task: nodule, loss: 0.00140, accuracy: 0.99974, auc: 1.00000, f1: 0.99945, precision: 0.99891, recall: 1.00000
+avg loss: 0.00140, lr: 0.000003
+
+Test Epoch: 46
+task: nodule, loss: 0.01534, accuracy: 0.99490, auc: 0.99983, f1: 0.98861, precision: 0.98636, recall: 0.99087
+avg loss: 0.01534
+
+  CO₂ époque 46 : 0.000356 kg
+Train Epoch: 47
+task: nodule, loss: 0.00308, accuracy: 0.99897, auc: 0.99999, f1: 0.99781, precision: 0.99781, recall: 0.99781
+avg loss: 0.00308, lr: 0.000001
+
+Test Epoch: 47
+task: nodule, loss: 0.01535, accuracy: 0.99490, auc: 0.99981, f1: 0.98861, precision: 0.98636, recall: 0.99087
+avg loss: 0.01535
+
+  CO₂ époque 47 : 0.000357 kg
+Train Epoch: 48
+task: nodule, loss: 0.00190, accuracy: 0.99923, auc: 1.00000, f1: 0.99836, precision: 0.99782, recall: 0.99891
+avg loss: 0.00190, lr: 0.000001
+
+Test Epoch: 48
+task: nodule, loss: 0.01588, accuracy: 0.99490, auc: 0.99983, f1: 0.98861, precision: 0.98636, recall: 0.99087
+avg loss: 0.01588
+
+  CO₂ époque 48 : 0.000354 kg
+Train Epoch: 49
+task: nodule, loss: 0.00062, accuracy: 1.00000, auc: 1.00000, f1: 1.00000, precision: 1.00000, recall: 1.00000
+avg loss: 0.00062, lr: 0.000000
+
+Test Epoch: 49
+task: nodule, loss: 0.01689, accuracy: 0.99490, auc: 0.99984, f1: 0.98861, precision: 0.98636, recall: 0.99087
+avg loss: 0.01689
+
+  CO₂ époque 49 : 0.000353 kg
+Train Epoch: 50
+task: nodule, loss: 0.00286, accuracy: 0.99923, auc: 0.99999, f1: 0.99836, precision: 0.99782, recall: 0.99891
+avg loss: 0.00286, lr: 0.000000
+
+Test Epoch: 50
+task: nodule, loss: 0.01693, accuracy: 0.99490, auc: 0.99980, f1: 0.98861, precision: 0.98636, recall: 0.99087
+avg loss: 0.01693
+
+  CO₂ époque 50 : 0.000357 kg
+
+==================================================
+Run        : hmsips_node21_v1
+Paramètres : 14.586 M
+Encodeur   : resnet18 (n_res_blocks=4)
+
+── Meilleurs scores (val) ──
+  loss         : 0.00029 (époque 9)
+  accuracy     : 1.00000 (époque 9)
+  auc          : 1.00000 (époque 4)
+  f1           : 1.00000 (époque 9)
+  precision    : 1.00000 (époque 2)
+  recall       : 1.00000 (époque 4)
+
+── Efficiency ──
+  Époque 0 [train] : VRAM=1994 MB, temps=105.0 s
+  Époque 0 [val] : VRAM=1574 MB, temps=20.5 s
+  Époque 1 [train] : VRAM=1994 MB, temps=100.9 s
+  Époque 1 [val] : VRAM=1572 MB, temps=20.4 s
+==================================================
+
+Checkpoint sauvegardé : 20260628-ips-project/results/h-ms-ips/hmsips/node21/hmsips_node21_v1.pt
+Poids sauvegardés : 20260628-ips-project/results/h-ms-ips/hmsips/node21/hmsips_node21_v1_weights.pt
+History sauvegardée : 20260628-ips-project/results/h-ms-ips/hmsips/node21/hmsips_node21_v1_history.json
+Expérience sauvegardée : 20260628-ips-project/results/h-ms-ips/hmsips/hmsips_node21_v1_experiment.csv
+Saved: 20260628-ips-project/results/h-ms-ips/hmsips/node21/hmsips_node21_v1_confusion_matrix.png
+
+Classification Report
+              precision    recall  f1-score   support
+
+   No nodule       1.00      1.00      1.00       761
+      Nodule       0.99      0.99      0.99       219
+
+    accuracy                           0.99       980
+   macro avg       0.99      0.99      0.99       980
+weighted avg       0.99      0.99      0.99       980
+
+Probs         : {'nodule': array([2.647071e-04, 9.997353e-01], dtype=float32)}
+Label         : {'nodule': 1}
+Patches fins  : 10
+Zones grossières sélectionnées : 4
+  Sauvegardé : 20260628-ips-project/results/h-ms-ips/hmsips/node21/saliency/hmsips_node21_v1_saliency_00_img654.png
+  Patches    : 20260628-ips-project/results/h-ms-ips/hmsips/node21/saliency/hmsips_node21_v1_patches_00_img654.npy
+  Sauvegardé : 20260628-ips-project/results/h-ms-ips/hmsips/node21/saliency/hmsips_node21_v1_saliency_01_img114.png
+  Patches    : 20260628-ips-project/results/h-ms-ips/hmsips/node21/saliency/hmsips_node21_v1_patches_01_img114.npy
+  Sauvegardé : 20260628-ips-project/results/h-ms-ips/hmsips/node21/saliency/hmsips_node21_v1_saliency_02_img25.png
+  Patches    : 20260628-ips-project/results/h-ms-ips/hmsips/node21/saliency/hmsips_node21_v1_patches_02_img25.npy
+  Sauvegardé : 20260628-ips-project/results/h-ms-ips/hmsips/node21/saliency/hmsips_node21_v1_saliency_03_img759.png
+  Patches    : 20260628-ips-project/results/h-ms-ips/hmsips/node21/saliency/hmsips_node21_v1_patches_03_img759.npy
+  Sauvegardé : 20260628-ips-project/results/h-ms-ips/hmsips/node21/saliency/hmsips_node21_v1_saliency_04_img281.png
+  Patches    : 20260628-ips-project/results/h-ms-ips/hmsips/node21/saliency/hmsips_node21_v1_patches_04_img281.npy
+CSV : 20260628-ips-project/results/h-ms-ips/hmsips/node21/saliency/hmsips_node21_v1_saliency.csv  (50 lignes)
+
+CO₂ total      : 0.017775 kg
+CO₂ par époque : 0.000356 kg
+[DDRDatasetHMSIPS] split=train |  6260 imgs | C0=3133, C1=315, C2=2238, C3=118, C4=456
+[DDRDatasetHMSIPS] split=valid |  2503 imgs | C0=1253, C1=126, C2=895, C3=47, C4=182
+DataFactory ✓ — dataset=hmsips_ddr
+  Train : 6260 images
+  Test  : 2503 images
+  Loaders créés — batch_size=16
+  Train batches : 392
+  Test batches  : 157
+[PatchEncoder] ImageNet weights
+UniversalEngineHMSIPS instancié ✓
+Optimizer : AdamW
+Critères  : ['dr_grade']
+History keys (train) : ['loss', 'accuracy', 'kappa', 'f1']
+Train Epoch: 1
+task: dr_grade, loss: 1.22041, accuracy: 0.46518, kappa: 0.11399, f1: 0.22558
+avg loss: 1.22041, lr: 0.000010
+
+Test Epoch: 1
+task: dr_grade, loss: 0.94354, accuracy: 0.65481, kappa: 0.47689, f1: 0.26842
+avg loss: 0.94354
+
+  CO₂ époque 1 : 0.001297 kg
+Train Epoch: 2
+task: dr_grade, loss: 0.89869, accuracy: 0.64617, kappa: 0.51133, f1: 0.31869
+avg loss: 0.89869, lr: 0.000020
+
+Test Epoch: 2
+task: dr_grade, loss: 0.84116, accuracy: 0.68438, kappa: 0.59563, f1: 0.39258
+avg loss: 0.84116
+
+  CO₂ époque 2 : 0.001265 kg
+Train Epoch: 3
+task: dr_grade, loss: 0.79903, accuracy: 0.68834, kappa: 0.60911, f1: 0.39538
+avg loss: 0.79903, lr: 0.000030
+
+Test Epoch: 3
+task: dr_grade, loss: 0.68287, accuracy: 0.76668, kappa: 0.73308, f1: 0.39835
+avg loss: 0.68287
+
+  CO₂ époque 3 : 0.001278 kg
+Train Epoch: 4
+task: dr_grade, loss: 0.74325, accuracy: 0.71422, kappa: 0.64915, f1: 0.44137
+avg loss: 0.74325, lr: 0.000040
+
+Test Epoch: 4
+task: dr_grade, loss: 0.68141, accuracy: 0.76428, kappa: 0.71164, f1: 0.50392
+avg loss: 0.68141
+
+  CO₂ époque 4 : 0.001293 kg
+Train Epoch: 5
+task: dr_grade, loss: 0.70043, accuracy: 0.73850, kappa: 0.69099, f1: 0.46343
+avg loss: 0.70043, lr: 0.000050
+
+Test Epoch: 5
+task: dr_grade, loss: 0.86009, accuracy: 0.66880, kappa: 0.62033, f1: 0.45403
+avg loss: 0.86009
+
+  CO₂ époque 5 : 0.001298 kg
+Train Epoch: 6
+task: dr_grade, loss: 0.67299, accuracy: 0.74521, kappa: 0.70116, f1: 0.46308
+avg loss: 0.67299, lr: 0.000060
+
+Test Epoch: 6
+task: dr_grade, loss: 0.58182, accuracy: 0.80064, kappa: 0.77876, f1: 0.45501
+avg loss: 0.58182
+
+  CO₂ époque 6 : 0.001283 kg
+Train Epoch: 7
+task: dr_grade, loss: 0.64868, accuracy: 0.76709, kappa: 0.73297, f1: 0.50349
+avg loss: 0.64868, lr: 0.000070
+
+Test Epoch: 7
+task: dr_grade, loss: 0.61550, accuracy: 0.77907, kappa: 0.75742, f1: 0.51551
+avg loss: 0.61550
+
+  CO₂ époque 7 : 0.001263 kg
+Train Epoch: 8
+task: dr_grade, loss: 0.62487, accuracy: 0.77204, kappa: 0.73796, f1: 0.52201
+avg loss: 0.62487, lr: 0.000080
+
+Test Epoch: 8
+task: dr_grade, loss: 0.57662, accuracy: 0.81103, kappa: 0.80426, f1: 0.56627
+avg loss: 0.57662
+
+  CO₂ époque 8 : 0.001262 kg
+Train Epoch: 9
+task: dr_grade, loss: 0.60862, accuracy: 0.78067, kappa: 0.75423, f1: 0.55260
+avg loss: 0.60862, lr: 0.000090
+
+Test Epoch: 9
+task: dr_grade, loss: 0.61665, accuracy: 0.78426, kappa: 0.78207, f1: 0.51971
+avg loss: 0.61665
+
+  CO₂ époque 9 : 0.001281 kg
+Train Epoch: 10
+task: dr_grade, loss: 0.60225, accuracy: 0.77891, kappa: 0.75368, f1: 0.53578
+avg loss: 0.60225, lr: 0.000100
+
+Test Epoch: 10
+task: dr_grade, loss: 0.57418, accuracy: 0.80344, kappa: 0.79422, f1: 0.53912
+avg loss: 0.57418
+
+  CO₂ époque 10 : 0.001270 kg
+Train Epoch: 11
+task: dr_grade, loss: 0.59422, accuracy: 0.78466, kappa: 0.76229, f1: 0.53991
+avg loss: 0.59422, lr: 0.000100
+
+Test Epoch: 11
+task: dr_grade, loss: 0.68751, accuracy: 0.75989, kappa: 0.70582, f1: 0.55613
+avg loss: 0.68751
+
+  CO₂ époque 11 : 0.001293 kg
+Train Epoch: 12
+task: dr_grade, loss: 0.56772, accuracy: 0.78930, kappa: 0.76752, f1: 0.54077
+avg loss: 0.56772, lr: 0.000099
+
+Test Epoch: 12
+task: dr_grade, loss: 0.67397, accuracy: 0.75749, kappa: 0.75985, f1: 0.50517
+avg loss: 0.67397
+
+  CO₂ époque 12 : 0.001280 kg
+Train Epoch: 13
+task: dr_grade, loss: 0.55246, accuracy: 0.79936, kappa: 0.78514, f1: 0.57818
+avg loss: 0.55246, lr: 0.000099
+
+Test Epoch: 13
+task: dr_grade, loss: 0.56553, accuracy: 0.79425, kappa: 0.80182, f1: 0.57382
+avg loss: 0.56553
+
+  CO₂ époque 13 : 0.001278 kg
+Train Epoch: 14
+task: dr_grade, loss: 0.53484, accuracy: 0.80815, kappa: 0.79061, f1: 0.57331
+avg loss: 0.53484, lr: 0.000098
+
+Test Epoch: 14
+task: dr_grade, loss: 0.53975, accuracy: 0.80384, kappa: 0.83112, f1: 0.59846
+avg loss: 0.53975
+
+  CO₂ époque 14 : 0.001287 kg
+Train Epoch: 15
+task: dr_grade, loss: 0.51959, accuracy: 0.81581, kappa: 0.80391, f1: 0.60418
+avg loss: 0.51959, lr: 0.000096
+
+Test Epoch: 15
+task: dr_grade, loss: 0.53595, accuracy: 0.81702, kappa: 0.83681, f1: 0.59375
+avg loss: 0.53595
+
+  CO₂ époque 15 : 0.001282 kg
+Train Epoch: 16
+task: dr_grade, loss: 0.50593, accuracy: 0.81869, kappa: 0.81484, f1: 0.60603
+avg loss: 0.50593, lr: 0.000095
+
+Test Epoch: 16
+task: dr_grade, loss: 0.54977, accuracy: 0.81223, kappa: 0.83135, f1: 0.57400
+avg loss: 0.54977
+
+  CO₂ époque 16 : 0.001286 kg
+Train Epoch: 17
+task: dr_grade, loss: 0.50906, accuracy: 0.81390, kappa: 0.80294, f1: 0.61642
+avg loss: 0.50906, lr: 0.000093
+
+Test Epoch: 17
+task: dr_grade, loss: 0.65313, accuracy: 0.76868, kappa: 0.78116, f1: 0.52464
+avg loss: 0.65313
+
+  CO₂ époque 17 : 0.001293 kg
+Train Epoch: 18
+task: dr_grade, loss: 0.48866, accuracy: 0.82604, kappa: 0.81983, f1: 0.64199
+avg loss: 0.48866, lr: 0.000090
+
+Test Epoch: 18
+task: dr_grade, loss: 0.56717, accuracy: 0.81143, kappa: 0.76604, f1: 0.59977
+avg loss: 0.56717
+
+  CO₂ époque 18 : 0.001281 kg
+Train Epoch: 19
+task: dr_grade, loss: 0.45998, accuracy: 0.83770, kappa: 0.82951, f1: 0.65305
+avg loss: 0.45998, lr: 0.000088
+
+Test Epoch: 19
+task: dr_grade, loss: 0.54596, accuracy: 0.80663, kappa: 0.84802, f1: 0.59349
+avg loss: 0.54596
+
+  CO₂ époque 19 : 0.001287 kg
+Train Epoch: 20
+task: dr_grade, loss: 0.46519, accuracy: 0.83722, kappa: 0.83330, f1: 0.65992
+avg loss: 0.46519, lr: 0.000085
+
+Test Epoch: 20
+task: dr_grade, loss: 0.50719, accuracy: 0.82381, kappa: 0.82590, f1: 0.62790
+avg loss: 0.50719
+
+  CO₂ époque 20 : 0.001269 kg
+Train Epoch: 21
+task: dr_grade, loss: 0.44639, accuracy: 0.83658, kappa: 0.83467, f1: 0.65599
+avg loss: 0.44639, lr: 0.000082
+
+Test Epoch: 21
+task: dr_grade, loss: 0.62482, accuracy: 0.78386, kappa: 0.81167, f1: 0.58810
+avg loss: 0.62482
+
+  CO₂ époque 21 : 0.001281 kg
+Train Epoch: 22
+task: dr_grade, loss: 0.43109, accuracy: 0.84217, kappa: 0.83633, f1: 0.67244
+avg loss: 0.43109, lr: 0.000079
+
+Test Epoch: 22
+task: dr_grade, loss: 0.49611, accuracy: 0.81262, kappa: 0.85869, f1: 0.63130
+avg loss: 0.49611
+
+  CO₂ époque 22 : 0.001481 kg
+Train Epoch: 23
+task: dr_grade, loss: 0.42071, accuracy: 0.84601, kappa: 0.85083, f1: 0.67099
+avg loss: 0.42071, lr: 0.000076
+
+Test Epoch: 23
+task: dr_grade, loss: 0.52651, accuracy: 0.80304, kappa: 0.82960, f1: 0.56610
+avg loss: 0.52651
+
+  CO₂ époque 23 : 0.001307 kg
+Train Epoch: 24
+task: dr_grade, loss: 0.42601, accuracy: 0.84952, kappa: 0.84880, f1: 0.67033
+avg loss: 0.42601, lr: 0.000073
+
+Test Epoch: 24
+task: dr_grade, loss: 0.53480, accuracy: 0.82581, kappa: 0.83501, f1: 0.61510
+avg loss: 0.53480
+
+  CO₂ époque 24 : 0.001276 kg
+Train Epoch: 25
+task: dr_grade, loss: 0.41142, accuracy: 0.85383, kappa: 0.85835, f1: 0.69034
+avg loss: 0.41142, lr: 0.000069
+
+Test Epoch: 25
+task: dr_grade, loss: 0.46854, accuracy: 0.84419, kappa: 0.85995, f1: 0.66266
+avg loss: 0.46854
+
+  CO₂ époque 25 : 0.001270 kg
+Train Epoch: 26
+task: dr_grade, loss: 0.39706, accuracy: 0.85447, kappa: 0.85250, f1: 0.69796
+avg loss: 0.39706, lr: 0.000065
+
+Test Epoch: 26
+task: dr_grade, loss: 0.51524, accuracy: 0.83180, kappa: 0.84890, f1: 0.65559
+avg loss: 0.51524
+
+  CO₂ époque 26 : 0.001269 kg
+Train Epoch: 27
+task: dr_grade, loss: 0.39275, accuracy: 0.85974, kappa: 0.86127, f1: 0.71522
+avg loss: 0.39275, lr: 0.000062
+
+Test Epoch: 27
+task: dr_grade, loss: 0.50905, accuracy: 0.81822, kappa: 0.85293, f1: 0.60800
+avg loss: 0.50905
+
+  CO₂ époque 27 : 0.001271 kg
+Train Epoch: 28
+task: dr_grade, loss: 0.37888, accuracy: 0.86613, kappa: 0.87414, f1: 0.71408
+avg loss: 0.37888, lr: 0.000058
+
+Test Epoch: 28
+task: dr_grade, loss: 0.51621, accuracy: 0.81063, kappa: 0.84353, f1: 0.60415
+avg loss: 0.51621
+
+  CO₂ époque 28 : 0.001265 kg
+Train Epoch: 29
+task: dr_grade, loss: 0.35749, accuracy: 0.86869, kappa: 0.87702, f1: 0.74011
+avg loss: 0.35749, lr: 0.000054
+
+Test Epoch: 29
+task: dr_grade, loss: 0.46345, accuracy: 0.85338, kappa: 0.86700, f1: 0.62309
+avg loss: 0.46345
+
+  CO₂ époque 29 : 0.001251 kg
+Train Epoch: 30
+task: dr_grade, loss: 0.36311, accuracy: 0.87173, kappa: 0.87784, f1: 0.73045
+avg loss: 0.36311, lr: 0.000050
+
+Test Epoch: 30
+task: dr_grade, loss: 0.46814, accuracy: 0.82980, kappa: 0.88319, f1: 0.64178
+avg loss: 0.46814
+
+  CO₂ époque 30 : 0.001292 kg
+Train Epoch: 31
+task: dr_grade, loss: 0.33351, accuracy: 0.87971, kappa: 0.89124, f1: 0.75312
+avg loss: 0.33351, lr: 0.000046
+
+Test Epoch: 31
+task: dr_grade, loss: 0.47951, accuracy: 0.83899, kappa: 0.86802, f1: 0.62433
+avg loss: 0.47951
+
+  CO₂ époque 31 : 0.001279 kg
+Train Epoch: 32
+task: dr_grade, loss: 0.31977, accuracy: 0.88435, kappa: 0.89978, f1: 0.75486
+avg loss: 0.31977, lr: 0.000042
+
+Test Epoch: 32
+task: dr_grade, loss: 0.57680, accuracy: 0.80344, kappa: 0.85661, f1: 0.59629
+avg loss: 0.57680
+
+  CO₂ époque 32 : 0.001277 kg
+Train Epoch: 33
+task: dr_grade, loss: 0.30672, accuracy: 0.88866, kappa: 0.89505, f1: 0.77493
+avg loss: 0.30672, lr: 0.000038
+
+Test Epoch: 33
+task: dr_grade, loss: 0.56864, accuracy: 0.82022, kappa: 0.85714, f1: 0.63014
+avg loss: 0.56864
+
+  CO₂ époque 33 : 0.001276 kg
+Train Epoch: 34
+task: dr_grade, loss: 0.31526, accuracy: 0.89153, kappa: 0.90691, f1: 0.75929
+avg loss: 0.31526, lr: 0.000035
+
+Test Epoch: 34
+task: dr_grade, loss: 0.51417, accuracy: 0.82501, kappa: 0.84980, f1: 0.63582
+avg loss: 0.51417
+
+  CO₂ époque 34 : 0.001275 kg
+Train Epoch: 35
+task: dr_grade, loss: 0.30089, accuracy: 0.89201, kappa: 0.90163, f1: 0.77622
+avg loss: 0.30089, lr: 0.000031
+
+Test Epoch: 35
+task: dr_grade, loss: 0.47565, accuracy: 0.83899, kappa: 0.87420, f1: 0.63660
+avg loss: 0.47565
+
+  CO₂ époque 35 : 0.001268 kg
+Train Epoch: 36
+task: dr_grade, loss: 0.27930, accuracy: 0.90080, kappa: 0.91177, f1: 0.79869
+avg loss: 0.27930, lr: 0.000027
+
+Test Epoch: 36
+task: dr_grade, loss: 0.49641, accuracy: 0.83620, kappa: 0.87491, f1: 0.62147
+avg loss: 0.49641
+
+  CO₂ époque 36 : 0.001275 kg
+Train Epoch: 37
+task: dr_grade, loss: 0.27198, accuracy: 0.90431, kappa: 0.91516, f1: 0.80508
+avg loss: 0.27198, lr: 0.000024
+
+Test Epoch: 37
+task: dr_grade, loss: 0.46935, accuracy: 0.84459, kappa: 0.88118, f1: 0.66068
+avg loss: 0.46935
+
+  CO₂ époque 37 : 0.001271 kg
+Train Epoch: 38
+task: dr_grade, loss: 0.25279, accuracy: 0.91134, kappa: 0.92232, f1: 0.81614
+avg loss: 0.25279, lr: 0.000021
+
+Test Epoch: 38
+task: dr_grade, loss: 0.47625, accuracy: 0.84698, kappa: 0.88586, f1: 0.65432
+avg loss: 0.47625
+
+  CO₂ époque 38 : 0.001260 kg
+Train Epoch: 39
+task: dr_grade, loss: 0.25533, accuracy: 0.90815, kappa: 0.92066, f1: 0.80820
+avg loss: 0.25533, lr: 0.000018
+
+Test Epoch: 39
+task: dr_grade, loss: 0.48334, accuracy: 0.84099, kappa: 0.88405, f1: 0.64429
+avg loss: 0.48334
+
+  CO₂ époque 39 : 0.001280 kg
+Train Epoch: 40
+task: dr_grade, loss: 0.23659, accuracy: 0.91406, kappa: 0.92418, f1: 0.83245
+avg loss: 0.23659, lr: 0.000015
+
+Test Epoch: 40
+task: dr_grade, loss: 0.50637, accuracy: 0.83620, kappa: 0.88221, f1: 0.64410
+avg loss: 0.50637
+
+  CO₂ époque 40 : 0.001272 kg
+Train Epoch: 41
+task: dr_grade, loss: 0.23099, accuracy: 0.91805, kappa: 0.93121, f1: 0.83267
+avg loss: 0.23099, lr: 0.000012
+
+Test Epoch: 41
+task: dr_grade, loss: 0.51766, accuracy: 0.82980, kappa: 0.87539, f1: 0.62307
+avg loss: 0.51766
+
+  CO₂ époque 41 : 0.001296 kg
+Train Epoch: 42
+task: dr_grade, loss: 0.21655, accuracy: 0.92236, kappa: 0.93440, f1: 0.84914
+avg loss: 0.21655, lr: 0.000010
+
+Test Epoch: 42
+task: dr_grade, loss: 0.49847, accuracy: 0.84379, kappa: 0.88131, f1: 0.65051
+avg loss: 0.49847
+
+  CO₂ époque 42 : 0.001278 kg
+Train Epoch: 43
+task: dr_grade, loss: 0.21807, accuracy: 0.92157, kappa: 0.93311, f1: 0.84797
+avg loss: 0.21807, lr: 0.000007
+
+Test Epoch: 43
+task: dr_grade, loss: 0.51495, accuracy: 0.83660, kappa: 0.88503, f1: 0.62831
+avg loss: 0.51495
+
+  CO₂ époque 43 : 0.001273 kg
+Train Epoch: 44
+task: dr_grade, loss: 0.20877, accuracy: 0.92684, kappa: 0.93914, f1: 0.85875
+avg loss: 0.20877, lr: 0.000006
+
+Test Epoch: 44
+task: dr_grade, loss: 0.51885, accuracy: 0.84259, kappa: 0.88517, f1: 0.64677
+avg loss: 0.51885
+
+  CO₂ époque 44 : 0.001274 kg
+Train Epoch: 45
+task: dr_grade, loss: 0.20823, accuracy: 0.92540, kappa: 0.93600, f1: 0.85315
+avg loss: 0.20823, lr: 0.000004
+
+Test Epoch: 45
+task: dr_grade, loss: 0.51923, accuracy: 0.84259, kappa: 0.88317, f1: 0.65000
+avg loss: 0.51923
+
+  CO₂ époque 45 : 0.001266 kg
+Train Epoch: 46
+task: dr_grade, loss: 0.19989, accuracy: 0.93147, kappa: 0.94183, f1: 0.87578
+avg loss: 0.19989, lr: 0.000003
+
+Test Epoch: 46
+task: dr_grade, loss: 0.54039, accuracy: 0.83540, kappa: 0.87952, f1: 0.62801
+avg loss: 0.54039
+
+  CO₂ époque 46 : 0.001265 kg
+Train Epoch: 47
+task: dr_grade, loss: 0.19417, accuracy: 0.93371, kappa: 0.94273, f1: 0.88051
+avg loss: 0.19417, lr: 0.000001
+
+Test Epoch: 47
+task: dr_grade, loss: 0.52889, accuracy: 0.83740, kappa: 0.87992, f1: 0.63458
+avg loss: 0.52889
+
+  CO₂ époque 47 : 0.001259 kg
+Train Epoch: 48
+task: dr_grade, loss: 0.20137, accuracy: 0.93083, kappa: 0.94138, f1: 0.87082
+avg loss: 0.20137, lr: 0.000001
+
+Test Epoch: 48
+task: dr_grade, loss: 0.54631, accuracy: 0.84019, kappa: 0.87802, f1: 0.64413
+avg loss: 0.54631
+
+  CO₂ époque 48 : 0.001276 kg
+Train Epoch: 49
+task: dr_grade, loss: 0.19560, accuracy: 0.93275, kappa: 0.94196, f1: 0.86797
+avg loss: 0.19560, lr: 0.000000
+
+Test Epoch: 49
+task: dr_grade, loss: 0.54425, accuracy: 0.83180, kappa: 0.87851, f1: 0.63012
+avg loss: 0.54425
+
+  CO₂ époque 49 : 0.001289 kg
+Train Epoch: 50
+task: dr_grade, loss: 0.20070, accuracy: 0.92971, kappa: 0.93805, f1: 0.87389
+avg loss: 0.20070, lr: 0.000000
+
+Test Epoch: 50
+task: dr_grade, loss: 0.54047, accuracy: 0.83859, kappa: 0.87686, f1: 0.63615
+avg loss: 0.54047
+
+  CO₂ époque 50 : 0.001288 kg
+
+==================================================
+Run        : hmsips_ddr_v1
+Paramètres : 14.594 M
+Encodeur   : resnet18 (n_res_blocks=4)
+
+── Meilleurs scores (val) ──
+  loss         : 0.46345 (époque 29)
+  accuracy     : 0.85338 (époque 29)
+  kappa        : 0.88586 (époque 38)
+  f1           : 0.66266 (époque 25)
+
+── Efficiency ──
+  Époque 0 [train] : VRAM=1538 MB, temps=583.6 s
+  Époque 0 [val] : VRAM=1536 MB, temps=67.8 s
+  Époque 1 [train] : VRAM=1538 MB, temps=565.7 s
+  Époque 1 [val] : VRAM=1536 MB, temps=68.8 s
+==================================================
+
+Checkpoint sauvegardé : 20260628-ips-project/results/h-ms-ips/hmsips/ddr/hmsips_ddr_v1.pt
+Poids sauvegardés : 20260628-ips-project/results/h-ms-ips/hmsips/ddr/hmsips_ddr_v1_weights.pt
+History sauvegardée : 20260628-ips-project/results/h-ms-ips/hmsips/ddr/hmsips_ddr_v1_history.json
+Expérience sauvegardée : 20260628-ips-project/results/h-ms-ips/hmsips/hmsips_ddr_v1_experiment.csv
+Saved: 20260628-ips-project/results/h-ms-ips/hmsips/ddr/hmsips_ddr_v1_confusion_matrix.png
+
+Classification Report
+               precision    recall  f1-score   support
+
+        No DR       0.91      0.98      0.94      1253
+         Mild       0.47      0.29      0.36       126
+     Moderate       0.87      0.73      0.79       895
+       Severe       0.22      0.51      0.31        47
+Proliferative       0.74      0.82      0.78       182
+
+     accuracy                           0.84      2503
+    macro avg       0.64      0.67      0.64      2503
+ weighted avg       0.85      0.84      0.84      2503
+
+Probs         : {'dr_grade': array([6.5297298e-02, 1.2669093e-03, 9.3334252e-01, 7.6292199e-05,
+       1.7049297e-05], dtype=float32)}
+Label prédit  : {'dr_grade': 2}  |  Label réel : 0
+Patches fins  : 10
+Zones grossières sélectionnées : 4
+  Sauvegardé : 20260628-ips-project/results/h-ms-ips/hmsips/ddr/saliency/hmsips_ddr_v1_saliency_00_img456.png
+  Patches    : 20260628-ips-project/results/h-ms-ips/hmsips/ddr/saliency/hmsips_ddr_v1_patches_00_img456.npy
+  Sauvegardé : 20260628-ips-project/results/h-ms-ips/hmsips/ddr/saliency/hmsips_ddr_v1_saliency_01_img102.png
+  Patches    : 20260628-ips-project/results/h-ms-ips/hmsips/ddr/saliency/hmsips_ddr_v1_patches_01_img102.npy
+  Sauvegardé : 20260628-ips-project/results/h-ms-ips/hmsips/ddr/saliency/hmsips_ddr_v1_saliency_02_img1126.png
+  Patches    : 20260628-ips-project/results/h-ms-ips/hmsips/ddr/saliency/hmsips_ddr_v1_patches_02_img1126.npy
+  Sauvegardé : 20260628-ips-project/results/h-ms-ips/hmsips/ddr/saliency/hmsips_ddr_v1_saliency_03_img1003.png
+  Patches    : 20260628-ips-project/results/h-ms-ips/hmsips/ddr/saliency/hmsips_ddr_v1_patches_03_img1003.npy
+  Sauvegardé : 20260628-ips-project/results/h-ms-ips/hmsips/ddr/saliency/hmsips_ddr_v1_saliency_04_img914.png
+  Patches    : 20260628-ips-project/results/h-ms-ips/hmsips/ddr/saliency/hmsips_ddr_v1_patches_04_img914.npy
+CSV : 20260628-ips-project/results/h-ms-ips/hmsips/ddr/saliency/hmsips_ddr_v1_saliency.csv  (50 lignes)
+
+CO₂ total      : 0.064085 kg
+CO₂ par époque : 0.001282 kg
+DataFactory registry : ['hmsips_node21', 'hmsips_ddr', 'hmsips_rsna']
+Train : 20005 images | pos=4509 (22.5%) | neg=15496 (77.5%) | ratio=3.44:1
+Test  : 6679 images | pos=1503 (22.5%) | neg=5176 (77.5%) | ratio=3.44:1
+
+WeightedSampler :
+  n_pos=4509, n_neg=15496, ratio=3.44:1
+  w_pos=0.000222, w_neg=0.000065
+
+DataLoaders :
+  train batches : 1251
+  test  batches : 418
+[PatchEncoder] ImageNet weights
+UniversalEngineHMSIPS instancié ✓
+Optimizer : AdamW
+Critères  : ['pneumonia']
+History keys (train) : ['loss', 'accuracy', 'auc', 'f1', 'precision', 'recall']
+
+==================================================
+Run        : hmsips_rsna_v1
+Paramètres : 14.586 M
+Encodeur   : resnet18 (n_res_blocks=4)
+==================================================
+
+Train Epoch: 1
+task: pneumonia, loss: 0.58162, accuracy: 0.69263, auc: 0.76121, f1: 0.70393, precision: 0.67924, recall: 0.73049
+avg loss: 0.58162, lr: 0.000010
+
+Test Epoch: 1
+task: pneumonia, loss: 0.58233, accuracy: 0.69756, auc: 0.81482, f1: 0.54850, precision: 0.41299, recall: 0.81637
+avg loss: 0.58233
+
+  CO₂ époque 1 : 0.001345 kg
+Train Epoch: 2
+task: pneumonia, loss: 0.50776, accuracy: 0.75486, auc: 0.83018, f1: 0.75759, precision: 0.74878, recall: 0.76661
+avg loss: 0.50776, lr: 0.000020
+
+Test Epoch: 2
+task: pneumonia, loss: 0.53172, accuracy: 0.74053, auc: 0.84633, f1: 0.58191, precision: 0.45647, recall: 0.80240
+avg loss: 0.53172
+
+  CO₂ époque 2 : 0.001354 kg
+Train Epoch: 3
+task: pneumonia, loss: 0.48196, accuracy: 0.77331, auc: 0.84936, f1: 0.77972, precision: 0.76518, recall: 0.79481
+avg loss: 0.48196, lr: 0.000030
+
+Test Epoch: 3
+task: pneumonia, loss: 0.75475, accuracy: 0.61656, auc: 0.85579, f1: 0.52300, precision: 0.36317, recall: 0.93413
+avg loss: 0.75475
+
+  CO₂ époque 3 : 0.001362 kg
+Train Epoch: 4
+task: pneumonia, loss: 0.46192, accuracy: 0.78350, auc: 0.86298, f1: 0.78651, precision: 0.76993, recall: 0.80383
+avg loss: 0.46192, lr: 0.000040
+
+Test Epoch: 4
+task: pneumonia, loss: 0.42109, accuracy: 0.79907, auc: 0.85925, f1: 0.61613, precision: 0.54039, recall: 0.71657
+avg loss: 0.42109
+
+  CO₂ époque 4 : 0.001353 kg
+Train Epoch: 5
+task: pneumonia, loss: 0.45925, accuracy: 0.78490, auc: 0.86478, f1: 0.78866, precision: 0.77269, recall: 0.80532
+avg loss: 0.45925, lr: 0.000050
+
+Test Epoch: 5
+task: pneumonia, loss: 0.51355, accuracy: 0.76419, auc: 0.85969, f1: 0.60377, precision: 0.48544, recall: 0.79840
+avg loss: 0.51355
+
+  CO₂ époque 5 : 0.001358 kg
+Train Epoch: 6
+task: pneumonia, loss: 0.44745, accuracy: 0.79770, auc: 0.87263, f1: 0.80116, precision: 0.78500, recall: 0.81800
+avg loss: 0.44745, lr: 0.000060
+
+Test Epoch: 6
+task: pneumonia, loss: 0.40234, accuracy: 0.80835, auc: 0.86092, f1: 0.61745, precision: 0.56050, recall: 0.68729
+avg loss: 0.40234
+
+  CO₂ époque 6 : 0.001358 kg
+Train Epoch: 7
+task: pneumonia, loss: 0.44797, accuracy: 0.79035, auc: 0.87174, f1: 0.79664, precision: 0.77897, recall: 0.81514
+avg loss: 0.44797, lr: 0.000070
+
+Test Epoch: 7
+task: pneumonia, loss: 0.54075, accuracy: 0.72511, auc: 0.85551, f1: 0.57890, precision: 0.44172, recall: 0.83965
+avg loss: 0.54075
+
+  CO₂ époque 7 : 0.001358 kg
+Train Epoch: 8
+task: pneumonia, loss: 0.45184, accuracy: 0.79145, auc: 0.86920, f1: 0.79880, precision: 0.77882, recall: 0.81984
+avg loss: 0.45184, lr: 0.000080
+
+Test Epoch: 8
+task: pneumonia, loss: 0.45107, accuracy: 0.78350, auc: 0.86356, f1: 0.61522, precision: 0.51264, recall: 0.76913
+avg loss: 0.45107
+
+  CO₂ époque 8 : 0.001359 kg
+Train Epoch: 9
+task: pneumonia, loss: 0.44577, accuracy: 0.79520, auc: 0.87293, f1: 0.80465, precision: 0.78086, recall: 0.82994
+avg loss: 0.44577, lr: 0.000090
+
+Test Epoch: 9
+task: pneumonia, loss: 0.59508, accuracy: 0.68977, auc: 0.85819, f1: 0.56213, precision: 0.41189, recall: 0.88490
+avg loss: 0.59508
+
+  CO₂ époque 9 : 0.001354 kg
+Train Epoch: 10
+task: pneumonia, loss: 0.43999, accuracy: 0.79915, auc: 0.87625, f1: 0.80489, precision: 0.78233, recall: 0.82880
+avg loss: 0.43999, lr: 0.000100
+
+Test Epoch: 10
+task: pneumonia, loss: 0.41922, accuracy: 0.78979, auc: 0.86644, f1: 0.61786, precision: 0.52280, recall: 0.75516
+avg loss: 0.41922
+
+  CO₂ époque 10 : 0.001351 kg
+Train Epoch: 11
+task: pneumonia, loss: 0.44458, accuracy: 0.79520, auc: 0.87377, f1: 0.79980, precision: 0.78218, recall: 0.81824
+avg loss: 0.44458, lr: 0.000100
+
+Test Epoch: 11
+task: pneumonia, loss: 0.56658, accuracy: 0.70579, auc: 0.85820, f1: 0.57180, precision: 0.42515, recall: 0.87292
+avg loss: 0.56658
+
+  CO₂ époque 11 : 0.001354 kg
+Train Epoch: 12
+task: pneumonia, loss: 0.45013, accuracy: 0.79155, auc: 0.87008, f1: 0.79742, precision: 0.77527, recall: 0.82086
+avg loss: 0.45013, lr: 0.000099
+
+Test Epoch: 12
+task: pneumonia, loss: 0.47689, accuracy: 0.76643, auc: 0.86198, f1: 0.60245, precision: 0.48823, recall: 0.78643
+avg loss: 0.47689
+
+  CO₂ époque 12 : 0.001353 kg
+Train Epoch: 13
+task: pneumonia, loss: 0.43802, accuracy: 0.80110, auc: 0.87800, f1: 0.80572, precision: 0.78678, recall: 0.82560
+avg loss: 0.43802, lr: 0.000099
+
+Test Epoch: 13
+task: pneumonia, loss: 0.37921, accuracy: 0.82437, auc: 0.85988, f1: 0.60677, precision: 0.61149, recall: 0.60213
+avg loss: 0.37921
+
+  CO₂ époque 13 : 0.001350 kg
+Train Epoch: 14
+task: pneumonia, loss: 0.42754, accuracy: 0.80875, auc: 0.88338, f1: 0.81508, precision: 0.78922, recall: 0.84269
+avg loss: 0.42754, lr: 0.000098
+
+Test Epoch: 14
+task: pneumonia, loss: 0.40659, accuracy: 0.80641, auc: 0.85174, f1: 0.60154, precision: 0.56028, recall: 0.64937
+avg loss: 0.40659
+
+  CO₂ époque 14 : 0.001354 kg
+Train Epoch: 15
+task: pneumonia, loss: 0.42862, accuracy: 0.80790, auc: 0.88352, f1: 0.80991, precision: 0.79370, recall: 0.82680
+avg loss: 0.42862, lr: 0.000096
+
+Test Epoch: 15
+task: pneumonia, loss: 0.58163, accuracy: 0.72181, auc: 0.86349, f1: 0.58359, precision: 0.44001, recall: 0.86627
+avg loss: 0.58163
+
+  CO₂ époque 15 : 0.001355 kg
+Train Epoch: 16
+task: pneumonia, loss: 0.41922, accuracy: 0.81300, auc: 0.88859, f1: 0.81951, precision: 0.79717, recall: 0.84315
+avg loss: 0.41922, lr: 0.000095
+
+Test Epoch: 16
+task: pneumonia, loss: 0.44392, accuracy: 0.77527, auc: 0.86231, f1: 0.61104, precision: 0.50042, recall: 0.78443
+avg loss: 0.44392
+
+  CO₂ époque 16 : 0.001350 kg
+Train Epoch: 17
+task: pneumonia, loss: 0.40561, accuracy: 0.82119, auc: 0.89564, f1: 0.82732, precision: 0.80204, recall: 0.85425
+avg loss: 0.40561, lr: 0.000093
+
+Test Epoch: 17
+task: pneumonia, loss: 0.42680, accuracy: 0.79772, auc: 0.86162, f1: 0.61543, precision: 0.53781, recall: 0.71923
+avg loss: 0.42680
+
+  CO₂ époque 17 : 0.001353 kg
+Train Epoch: 18
+task: pneumonia, loss: 0.39170, accuracy: 0.82504, auc: 0.90335, f1: 0.82997, precision: 0.80852, recall: 0.85258
+avg loss: 0.39170, lr: 0.000090
+
+Test Epoch: 18
+task: pneumonia, loss: 0.54531, accuracy: 0.75880, auc: 0.86321, f1: 0.60524, precision: 0.47905, recall: 0.82169
+avg loss: 0.54531
+
+  CO₂ époque 18 : 0.001347 kg
+Train Epoch: 19
+task: pneumonia, loss: 0.39078, accuracy: 0.82849, auc: 0.90361, f1: 0.83463, precision: 0.81242, recall: 0.85808
+avg loss: 0.39078, lr: 0.000088
+
+Test Epoch: 19
+task: pneumonia, loss: 0.57555, accuracy: 0.71747, auc: 0.85093, f1: 0.57452, precision: 0.43452, recall: 0.84764
+avg loss: 0.57555
+
+  CO₂ époque 19 : 0.001347 kg
+Train Epoch: 20
+task: pneumonia, loss: 0.37738, accuracy: 0.83494, auc: 0.91014, f1: 0.84120, precision: 0.81601, recall: 0.86800
+avg loss: 0.37738, lr: 0.000085
+
+Test Epoch: 20
+task: pneumonia, loss: 0.45278, accuracy: 0.78994, auc: 0.85725, f1: 0.61211, precision: 0.52365, recall: 0.73653
+avg loss: 0.45278
+
+  CO₂ époque 20 : 0.001350 kg
+Train Epoch: 21
+task: pneumonia, loss: 0.34991, accuracy: 0.85279, auc: 0.92273, f1: 0.85632, precision: 0.83470, recall: 0.87909
+avg loss: 0.34991, lr: 0.000082
+
+Test Epoch: 21
+task: pneumonia, loss: 0.41847, accuracy: 0.80910, auc: 0.86433, f1: 0.62065, precision: 0.56136, recall: 0.69395
+avg loss: 0.41847
+
+  CO₂ époque 21 : 0.001351 kg
+Train Epoch: 22
+task: pneumonia, loss: 0.34748, accuracy: 0.84984, auc: 0.92427, f1: 0.85379, precision: 0.83335, recall: 0.87526
+avg loss: 0.34748, lr: 0.000079
+
+Test Epoch: 22
+task: pneumonia, loss: 0.50074, accuracy: 0.78694, auc: 0.86651, f1: 0.62003, precision: 0.51784, recall: 0.77246
+avg loss: 0.50074
+
+  CO₂ époque 22 : 0.001348 kg
+Train Epoch: 23
+task: pneumonia, loss: 0.32528, accuracy: 0.86488, auc: 0.93383, f1: 0.86766, precision: 0.85218, recall: 0.88371
+avg loss: 0.32528, lr: 0.000076
+
+Test Epoch: 23
+task: pneumonia, loss: 0.41683, accuracy: 0.81764, auc: 0.85455, f1: 0.60557, precision: 0.58991, recall: 0.62209
+avg loss: 0.41683
+
+  CO₂ époque 23 : 0.001348 kg
+Train Epoch: 24
+task: pneumonia, loss: 0.31656, accuracy: 0.86888, auc: 0.93688, f1: 0.87062, precision: 0.85514, recall: 0.88667
+avg loss: 0.31656, lr: 0.000073
+
+Test Epoch: 24
+task: pneumonia, loss: 0.45647, accuracy: 0.80057, auc: 0.85318, f1: 0.61053, precision: 0.54460, recall: 0.69461
+avg loss: 0.45647
+
+  CO₂ époque 24 : 0.001353 kg
+Train Epoch: 25
+task: pneumonia, loss: 0.28820, accuracy: 0.88403, auc: 0.94766, f1: 0.88640, precision: 0.87424, recall: 0.89890
+avg loss: 0.28820, lr: 0.000069
+
+Test Epoch: 25
+task: pneumonia, loss: 0.48668, accuracy: 0.81120, auc: 0.85984, f1: 0.62166, precision: 0.56612, recall: 0.68929
+avg loss: 0.48668
+
+  CO₂ époque 25 : 0.001347 kg
+Train Epoch: 26
+task: pneumonia, loss: 0.27797, accuracy: 0.88983, auc: 0.95126, f1: 0.89139, precision: 0.87483, recall: 0.90858
+avg loss: 0.27797, lr: 0.000065
+
+Test Epoch: 26
+task: pneumonia, loss: 0.50483, accuracy: 0.77916, auc: 0.84742, f1: 0.59820, precision: 0.50646, recall: 0.73054
+avg loss: 0.50483
+
+  CO₂ époque 26 : 0.001348 kg
+Train Epoch: 27
+task: pneumonia, loss: 0.25187, accuracy: 0.89803, auc: 0.95964, f1: 0.89951, precision: 0.88315, recall: 0.91648
+avg loss: 0.25187, lr: 0.000062
+
+Test Epoch: 27
+task: pneumonia, loss: 0.53467, accuracy: 0.80252, auc: 0.85519, f1: 0.62174, precision: 0.54637, recall: 0.72122
+avg loss: 0.53467
+
+  CO₂ époque 27 : 0.001346 kg
+Train Epoch: 28
+task: pneumonia, loss: 0.22866, accuracy: 0.91062, auc: 0.96675, f1: 0.91147, precision: 0.89839, recall: 0.92493
+avg loss: 0.22866, lr: 0.000058
+
+Test Epoch: 28
+task: pneumonia, loss: 0.52064, accuracy: 0.81404, auc: 0.85330, f1: 0.60696, precision: 0.57876, recall: 0.63806
+avg loss: 0.52064
+
+  CO₂ époque 28 : 0.001346 kg
+Train Epoch: 29
+task: pneumonia, loss: 0.21372, accuracy: 0.91757, auc: 0.97054, f1: 0.91832, precision: 0.90793, recall: 0.92895
+avg loss: 0.21372, lr: 0.000054
+
+Test Epoch: 29
+task: pneumonia, loss: 0.57164, accuracy: 0.77527, auc: 0.83613, f1: 0.58037, precision: 0.50048, recall: 0.69062
+avg loss: 0.57164
+
+  CO₂ époque 29 : 0.001346 kg
+Train Epoch: 30
+task: pneumonia, loss: 0.20608, accuracy: 0.91987, auc: 0.97242, f1: 0.92169, precision: 0.90815, recall: 0.93563
+avg loss: 0.20608, lr: 0.000050
+
+Test Epoch: 30
+task: pneumonia, loss: 0.63085, accuracy: 0.77047, auc: 0.84883, f1: 0.60561, precision: 0.49371, recall: 0.78310
+avg loss: 0.63085
+
+  CO₂ époque 30 : 0.001360 kg
+Train Epoch: 31
+task: pneumonia, loss: 0.18278, accuracy: 0.93292, auc: 0.97713, f1: 0.93427, precision: 0.92189, recall: 0.94698
+avg loss: 0.18278, lr: 0.000046
+
+Test Epoch: 31
+task: pneumonia, loss: 0.56214, accuracy: 0.80461, auc: 0.84776, f1: 0.59710, precision: 0.55703, recall: 0.64338
+avg loss: 0.56214
+
+  CO₂ époque 31 : 0.001343 kg
+Train Epoch: 32
+task: pneumonia, loss: 0.16176, accuracy: 0.94006, auc: 0.98239, f1: 0.94146, precision: 0.93006, recall: 0.95314
+avg loss: 0.16176, lr: 0.000042
+
+Test Epoch: 32
+task: pneumonia, loss: 0.55173, accuracy: 0.81689, auc: 0.84998, f1: 0.60536, precision: 0.58772, recall: 0.62409
+avg loss: 0.55173
+
+  CO₂ époque 32 : 0.001343 kg
+Train Epoch: 33
+task: pneumonia, loss: 0.15230, accuracy: 0.94366, auc: 0.98418, f1: 0.94414, precision: 0.93649, recall: 0.95193
+avg loss: 0.15230, lr: 0.000038
+
+Test Epoch: 33
+task: pneumonia, loss: 0.58726, accuracy: 0.79533, auc: 0.82898, f1: 0.58361, precision: 0.53820, recall: 0.63739
+avg loss: 0.58726
+
+  CO₂ époque 33 : 0.001341 kg
+Train Epoch: 34
+task: pneumonia, loss: 0.13719, accuracy: 0.94921, auc: 0.98695, f1: 0.94973, precision: 0.94135, recall: 0.95827
+avg loss: 0.13719, lr: 0.000035
+
+Test Epoch: 34
+task: pneumonia, loss: 0.58748, accuracy: 0.80057, auc: 0.83492, f1: 0.58556, precision: 0.54997, recall: 0.62608
+avg loss: 0.58748
+
+  CO₂ époque 34 : 0.001342 kg
+Train Epoch: 35
+task: pneumonia, loss: 0.12083, accuracy: 0.95691, auc: 0.98988, f1: 0.95744, precision: 0.94994, recall: 0.96506
+avg loss: 0.12083, lr: 0.000031
+
+Test Epoch: 35
+task: pneumonia, loss: 0.61508, accuracy: 0.81000, auc: 0.83745, f1: 0.57573, precision: 0.57863, recall: 0.57285
+avg loss: 0.61508
+
+  CO₂ époque 35 : 0.001342 kg
+Train Epoch: 36
+task: pneumonia, loss: 0.11461, accuracy: 0.95976, auc: 0.99064, f1: 0.95976, precision: 0.95248, recall: 0.96716
+avg loss: 0.11461, lr: 0.000027
+
+Test Epoch: 36
+task: pneumonia, loss: 0.62747, accuracy: 0.82123, auc: 0.84260, f1: 0.59933, precision: 0.60460, recall: 0.59415
+avg loss: 0.62747
+
+  CO₂ époque 36 : 0.001349 kg
+Train Epoch: 37
+task: pneumonia, loss: 0.10475, accuracy: 0.96356, auc: 0.99212, f1: 0.96355, precision: 0.95814, recall: 0.96903
+avg loss: 0.10475, lr: 0.000024
+
+Test Epoch: 37
+task: pneumonia, loss: 0.64925, accuracy: 0.81898, auc: 0.84427, f1: 0.57594, precision: 0.60905, recall: 0.54624
+avg loss: 0.64925
+
+  CO₂ époque 37 : 0.001337 kg
+Train Epoch: 38
+task: pneumonia, loss: 0.09474, accuracy: 0.96616, auc: 0.99358, f1: 0.96588, precision: 0.96098, recall: 0.97082
+avg loss: 0.09474, lr: 0.000021
+
+Test Epoch: 38
+task: pneumonia, loss: 0.68378, accuracy: 0.81614, auc: 0.84141, f1: 0.59869, precision: 0.58831, recall: 0.60945
+avg loss: 0.68378
+
+  CO₂ époque 38 : 0.001344 kg
+Train Epoch: 39
+task: pneumonia, loss: 0.07976, accuracy: 0.97301, auc: 0.99538, f1: 0.97323, precision: 0.96996, recall: 0.97652
+avg loss: 0.07976, lr: 0.000018
+
+Test Epoch: 39
+task: pneumonia, loss: 0.68181, accuracy: 0.81749, auc: 0.83603, f1: 0.57482, precision: 0.60411, recall: 0.54824
+avg loss: 0.68181
+
+  CO₂ époque 39 : 0.001339 kg
+Train Epoch: 40
+task: pneumonia, loss: 0.07530, accuracy: 0.97436, auc: 0.99556, f1: 0.97434, precision: 0.96983, recall: 0.97890
+avg loss: 0.07530, lr: 0.000015
+
+Test Epoch: 40
+task: pneumonia, loss: 0.72155, accuracy: 0.82138, auc: 0.83384, f1: 0.59325, precision: 0.60839, recall: 0.57884
+avg loss: 0.72155
+
+  CO₂ époque 40 : 0.001341 kg
+Train Epoch: 41
+task: pneumonia, loss: 0.06769, accuracy: 0.97701, auc: 0.99620, f1: 0.97676, precision: 0.97137, recall: 0.98222
+avg loss: 0.06769, lr: 0.000012
+
+Test Epoch: 41
+task: pneumonia, loss: 0.71142, accuracy: 0.81913, auc: 0.83613, f1: 0.58912, precision: 0.60264, recall: 0.57618
+avg loss: 0.71142
+
+  CO₂ époque 41 : 0.001338 kg
+Train Epoch: 42
+task: pneumonia, loss: 0.05964, accuracy: 0.98105, auc: 0.99706, f1: 0.98103, precision: 0.97736, recall: 0.98473
+avg loss: 0.05964, lr: 0.000010
+
+Test Epoch: 42
+task: pneumonia, loss: 0.76858, accuracy: 0.82018, auc: 0.82315, f1: 0.57874, precision: 0.61202, recall: 0.54890
+avg loss: 0.76858
+
+  CO₂ époque 42 : 0.001342 kg
+Train Epoch: 43
+task: pneumonia, loss: 0.05491, accuracy: 0.98120, auc: 0.99763, f1: 0.98118, precision: 0.97736, recall: 0.98503
+avg loss: 0.05491, lr: 0.000007
+
+Test Epoch: 43
+task: pneumonia, loss: 0.74599, accuracy: 0.81524, auc: 0.83245, f1: 0.59003, precision: 0.58925, recall: 0.59082
+avg loss: 0.74599
+
+  CO₂ époque 43 : 0.001355 kg
+Train Epoch: 44
+task: pneumonia, loss: 0.05346, accuracy: 0.98285, auc: 0.99741, f1: 0.98296, precision: 0.98019, recall: 0.98576
+avg loss: 0.05346, lr: 0.000006
+
+Test Epoch: 44
+task: pneumonia, loss: 0.72995, accuracy: 0.82258, auc: 0.82632, f1: 0.58523, precision: 0.61743, recall: 0.55622
+avg loss: 0.72995
+
+  CO₂ époque 44 : 0.001349 kg
+Train Epoch: 45
+task: pneumonia, loss: 0.05001, accuracy: 0.98420, auc: 0.99787, f1: 0.98419, precision: 0.98154, recall: 0.98686
+avg loss: 0.05001, lr: 0.000004
+
+Test Epoch: 45
+task: pneumonia, loss: 0.75138, accuracy: 0.82213, auc: 0.83089, f1: 0.57842, precision: 0.61977, recall: 0.54225
+avg loss: 0.75138
+
+  CO₂ époque 45 : 0.001362 kg
+Train Epoch: 46
+task: pneumonia, loss: 0.04475, accuracy: 0.98520, auc: 0.99819, f1: 0.98517, precision: 0.98222, recall: 0.98814
+avg loss: 0.04475, lr: 0.000003
+
+Test Epoch: 46
+task: pneumonia, loss: 0.78554, accuracy: 0.82048, auc: 0.82809, f1: 0.59148, precision: 0.60615, recall: 0.57751
+avg loss: 0.78554
+
+  CO₂ époque 46 : 0.001346 kg
+Train Epoch: 47
+task: pneumonia, loss: 0.04365, accuracy: 0.98665, auc: 0.99811, f1: 0.98641, precision: 0.98365, recall: 0.98918
+avg loss: 0.04365, lr: 0.000001
+
+Test Epoch: 47
+task: pneumonia, loss: 0.77054, accuracy: 0.81913, auc: 0.82465, f1: 0.57821, precision: 0.60838, recall: 0.55090
+avg loss: 0.77054
+
+  CO₂ époque 47 : 0.001341 kg
+Train Epoch: 48
+task: pneumonia, loss: 0.04276, accuracy: 0.98585, auc: 0.99843, f1: 0.98604, precision: 0.98425, recall: 0.98785
+avg loss: 0.04276, lr: 0.000001
+
+Test Epoch: 48
+task: pneumonia, loss: 0.76276, accuracy: 0.82063, auc: 0.82518, f1: 0.58024, precision: 0.61288, recall: 0.55090
+avg loss: 0.76276
+
+  CO₂ époque 48 : 0.001348 kg
+Train Epoch: 49
+task: pneumonia, loss: 0.03864, accuracy: 0.98770, auc: 0.99867, f1: 0.98770, precision: 0.98524, recall: 0.99018
+avg loss: 0.03864, lr: 0.000000
+
+Test Epoch: 49
+task: pneumonia, loss: 0.76958, accuracy: 0.81943, auc: 0.82730, f1: 0.58241, precision: 0.60722, recall: 0.55955
+avg loss: 0.76958
+
+  CO₂ époque 49 : 0.001348 kg
+Train Epoch: 50
+task: pneumonia, loss: 0.04195, accuracy: 0.98690, auc: 0.99824, f1: 0.98697, precision: 0.98413, recall: 0.98982
+avg loss: 0.04195, lr: 0.000000
+
+Test Epoch: 50
+task: pneumonia, loss: 0.77617, accuracy: 0.81943, auc: 0.82677, f1: 0.58755, precision: 0.60450, recall: 0.57152
+avg loss: 0.77617
+
+  CO₂ époque 50 : 0.001341 kg
+
+==================================================
+Run        : hmsips_rsna_v1
+Paramètres : 14.586 M
+Encodeur   : resnet18 (n_res_blocks=4)
+
+── Meilleurs scores (val) ──
+  loss         : 0.37921 (époque 13)
+  accuracy     : 0.82437 (époque 13)
+  auc          : 0.86651 (époque 22)
+  f1           : 0.62174 (époque 27)
+  precision    : 0.61977 (époque 45)
+  recall       : 0.93413 (époque 3)
+
+── Efficiency ──
+  Époque 0 [train] : VRAM=2001 MB, temps=259.4 s
+  Époque 0 [val] : VRAM=1578 MB, temps=66.8 s
+  Époque 1 [train] : VRAM=2002 MB, temps=256.8 s
+  Époque 1 [val] : VRAM=1578 MB, temps=66.6 s
+==================================================
+
+Checkpoint sauvegardé : 20260628-ips-project/results/h-ms-ips/hmsips/rsna/hmsips_rsna_v1.pt
+Poids sauvegardés : 20260628-ips-project/results/h-ms-ips/hmsips/rsna/hmsips_rsna_v1_weights.pt
+History sauvegardée : 20260628-ips-project/results/h-ms-ips/hmsips/rsna/hmsips_rsna_v1_history.json
+Expérience sauvegardée : 20260628-ips-project/results/h-ms-ips/hmsips/hmsips_rsna_v1_experiment.csv
+
+Fichiers sauvegardés :
+  hmsips_rsna_v1.pt  —  175.2 MB
+  hmsips_rsna_v1_history.json  —  0.0 MB
+  hmsips_rsna_v1_weights.pt  —  58.4 MB
+Saved: 20260628-ips-project/results/h-ms-ips/hmsips/rsna/hmsips_rsna_v1_confusion_matrix.png
+
+Classification Report
+              precision    recall  f1-score   support
+
+      Normal       0.88      0.89      0.88      5176
+   Pneumonia       0.60      0.57      0.59      1503
+
+    accuracy                           0.82      6679
+   macro avg       0.74      0.73      0.74      6679
+weighted avg       0.82      0.82      0.82      6679
+
+
+Inférence test[0] :
+  Probs  : {'pneumonia': array([0.60739154, 0.39260843], dtype=float32)}
+  Prédit : {'pneumonia': 0} | Réel : 1
+  Patches fins             : 10
+  Zones grossières retenues : 4
+  Sauvegardé : 20260628-ips-project/results/h-ms-ips/hmsips/rsna/saliency/hmsips_rsna_v1_saliency_00_img5238.png
+  Patches    : 20260628-ips-project/results/h-ms-ips/hmsips/rsna/saliency/hmsips_rsna_v1_patches_00_img5238.npy
+  Sauvegardé : 20260628-ips-project/results/h-ms-ips/hmsips/rsna/saliency/hmsips_rsna_v1_saliency_01_img912.png
+  Patches    : 20260628-ips-project/results/h-ms-ips/hmsips/rsna/saliency/hmsips_rsna_v1_patches_01_img912.npy
+  Sauvegardé : 20260628-ips-project/results/h-ms-ips/hmsips/rsna/saliency/hmsips_rsna_v1_saliency_02_img204.png
+  Patches    : 20260628-ips-project/results/h-ms-ips/hmsips/rsna/saliency/hmsips_rsna_v1_patches_02_img204.npy
+  Sauvegardé : 20260628-ips-project/results/h-ms-ips/hmsips/rsna/saliency/hmsips_rsna_v1_saliency_03_img6074.png
+  Patches    : 20260628-ips-project/results/h-ms-ips/hmsips/rsna/saliency/hmsips_rsna_v1_patches_03_img6074.npy
+  Sauvegardé : 20260628-ips-project/results/h-ms-ips/hmsips/rsna/saliency/hmsips_rsna_v1_saliency_04_img2253.png
+  Patches    : 20260628-ips-project/results/h-ms-ips/hmsips/rsna/saliency/hmsips_rsna_v1_patches_04_img2253.npy
+CSV : 20260628-ips-project/results/h-ms-ips/hmsips/rsna/saliency/hmsips_rsna_v1_saliency.csv  (50 lignes)
+
+CO₂ total      : 0.067450 kg
+CO₂ par époque : 0.001349 kg
+=========================================
+Terminé : Mon Jun 29 07:56:26 AM CEST 2026
+Exit code : 0
+
+[DONE] Succès.
+
+── Résultats dans 20260628-ips-project/results/h-ms-ips ──
+
+  [node21]
+    Checkpoints :
+      hmsips_node21_v1.pt                                      168 MB
+      hmsips_node21_v1_weights.pt                              56 MB
+    History :
+      hmsips_node21_v1_history.json
+    Experiments :
+    Confusion matrix :
+      hmsips_node21_v1_confusion_matrix.png
+    Saliency :
+      5 figures PNG
+      5 fichiers NPY (patches)
+      1 fichiers CSV
+
+  [ddr]
+    Checkpoints :
+      hmsips_ddr_v1.pt                                         168 MB
+      hmsips_ddr_v1_weights.pt                                 56 MB
+    History :
+      hmsips_ddr_v1_history.json
+    Experiments :
+    Confusion matrix :
+      hmsips_ddr_v1_confusion_matrix.png
+    Saliency :
+      5 figures PNG
+      5 fichiers NPY (patches)
+      1 fichiers CSV
+
+  [rsna]
+    Checkpoints :
+      hmsips_rsna_v1.pt                                        168 MB
+      hmsips_rsna_v1_weights.pt                                56 MB
+    History :
+      hmsips_rsna_v1_history.json
+    Experiments :
+    Confusion matrix :
+      hmsips_rsna_v1_confusion_matrix.png
+    Saliency :
+      5 figures PNG
+      5 fichiers NPY (patches)
+      1 fichiers CSV

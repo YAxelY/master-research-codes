@@ -1,0 +1,10 @@
+=========================================
+Job      : ips_gradcam  (451527)
+Node     : bigpu02
+Started  : Fri Jun 26 02:48:05 AM CEST 2026
+Notebook : ips-gradcam.ipynb
+Results  : ips-project/results/ips-gradcam/exp_001
+=========================================
+[OK] Kaggle credentials : /users/jlacmou/supports/aubin/master-research-codes/ips-project/../kaggle.json
+[SETUP] Création du virtualenv...
+[SETUP] Installation des dépendances...

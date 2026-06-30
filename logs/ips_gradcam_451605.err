@@ -1,0 +1,4 @@
+[NbConvertApp] Converting notebook /users/jlacmou/supports/aubin/master-research-codes/20260614-ips-project/../ips-gradcam.ipynb to script
+/users/jlacmou/supports/aubin/master-research-codes/20260614-ips-project/20260614-ips-project/venv/share/jupyter/nbconvert/templates/python/index.py.j2:61: UserWarning: IPython is needed to transform IPython syntax to pure Python. Install ipython if you need this functionality.
+[NbConvertApp] Writing 136574 bytes to 20260614-ips-project/_run_ips-gradcam.py
+[codecarbon WARNING @ 02:53:40] Multiple instances of codecarbon are allowed to run at the same time.

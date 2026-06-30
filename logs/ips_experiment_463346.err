@@ -1,0 +1,4 @@
+[NbConvertApp] Converting notebook /users/jlacmou/supports/aubin/master-research-codes/20260628-ips-project/../master2-qmix-standard-ce.ipynb to script
+/users/jlacmou/supports/aubin/master-research-codes/20260628-ips-project/20260628-ips-project/venv/share/jupyter/nbconvert/templates/python/index.py.j2:61: UserWarning: IPython is needed to transform IPython syntax to pure Python. Install ipython if you need this functionality.
+[NbConvertApp] Writing 78934 bytes to 20260628-ips-project/_run_master2-qmix-standard-ce.py
+[codecarbon WARNING @ 03:34:14] Multiple instances of codecarbon are allowed to run at the same time.

@@ -1,0 +1,453 @@
+=========================================
+Job      : ips_experiment  (463346)
+Node     : bigpu04
+Started  : Mon Jun 29 03:33:16 AM CEST 2026
+Notebook : master2-qmix-standard-ce.ipynb
+Results  : 20260628-ips-project/results/master2-qmix-standard-ce/exp_001
+=========================================
+[OK] Kaggle credentials : /users/jlacmou/supports/aubin/master-research-codes/20260628-ips-project/../kaggle.json
+[SETUP] Installation des dépendances...
+[CHECK] Vérification des datasets...
+  [OK]      samriddhibagchi/ddr-dataset-credits-to-authors
+
+[CONVERT] Notebook → script Python...
+[OK] Script généré : 20260628-ips-project/_run_master2-qmix-standard-ce.py
+[PATCH] Remplacement des chemins...
+  !pip install supprimés   (codecarbon déjà installé par bash)
+  /kaggle/input/datasets  → 20260628-ips-project/data/datasets/
+  /kaggle/working         → 20260628-ips-project/outputs
+  runs/ce_ddr_v1          → 20260628-ips-project/results/master2-qmix-standard-ce/exp_001/runs/ce_ddr_v1/
+  runs/qmix_ddr_v1        → 20260628-ips-project/results/master2-qmix-standard-ce/exp_001/runs/qmix_ddr_v1/
+  Patch OK.
+
+[CHECK] Validation du script généré...
+[OK] Script valide.
+
+[RUN] Démarrage — Mon Jun 29 03:33:25 AM CEST 2026
+=========================================
+Device  : cuda
+GPUs    : 1
+  GPU 0 : Tesla V100-PCIE-32GB — 34.1 GB
+PyTorch : 2.12.1+cu126
+
+=======================================================
+Config chargée ✓
+  Tâche      : dr_grade  (5 classes)
+  Métriques  : ['kappa', 'accuracy', 'f1']
+  img_size   : 512×512
+  n_epoch    : 50  (warmup=10)
+  batch_size : 16  |  lr=0.001  |  wd=0.0001
+  Encodeur   : resnet50  pretrained=True
+  Noise      : symmetric  Mis-H=50%  Mis-L=15%
+
+── Références papier (kappa %) ──
+  Standard CE │ no_noise=88.3  │ 50H+15L Best=81.4 Last=39.7
+  QMix        │ no_noise=90.1  │ 50H+15L Best=87.9 Last=86.3
+=======================================================
+[DDRDatasetCE] split=train |  6260 imgs | C0=3133, C1=315, C2=2238, C3=118, C4=456
+[DDRDatasetCE] split=valid |  2503 imgs | C0=1253, C1=126, C2=895, C3=47, C4=182
+[DDRDatasetCE] split=test  |  3759 imgs | C0=1880, C1=189, C2=1344, C3=71, C4=275
+
+[CE] input shape : torch.Size([3, 512, 512])
+[CE] label       : 0
+[DDRDatasetQMix] split=train |  7199 samples | Correct=3130 Mis-H=3130 Mis-L=939
+                 dist Correct : C0=1555, C1=156, C2=1132, C3=65, C4=222
+[DDRDatasetQMix] split=valid |  2503 samples | Correct=2503 Mis-H=0 Mis-L=0
+                 dist Correct : C0=1253, C1=126, C2=895, C3=47, C4=182
+[DDRDatasetQMix] split=test  |  3759 samples | Correct=3759 Mis-H=0 Mis-L=0
+                 dist Correct : C0=1880, C1=189, C2=1344, C3=71, C4=275
+
+[QMix] img_weak shape   : torch.Size([3, 512, 512])
+[QMix] img_strong shape : torch.Size([3, 512, 512])
+[QMix] label            : 3
+[QMix] noise_indicator  : 1  (0=Correct, 1=Mis-H, 2=Mis-L)
+
+Labels uniques CE (200 premiers) : [0]
+[StandardCENet] input=(4, 3, 512, 512) → prob=(4, 5) | sum≈1: 1.0000
+[StandardCENet] loss shape=(4,) entr shape=(4,)
+[StandardCENet] Params : 23.52 M
+
+[QMixNet] input=(4, 3, 512, 512) → prob=(4, 5) | sum≈1: 1.0000
+[QMixNet] loss shape=(4,) entr shape=(4,)
+[QMixNet] Params : 27.98 M
+[QMixNet] proj shape=(4, 128) | L2-norm≈1: 1.0000
+
+Sanity check GMM (50 samples)...
+  Durée : 6.0s
+  noise_pred shape : (50,)
+  w shape          : (50, 3)  (probs GMM)
+  Composantes      : Correct=23 Mis-H=11 Mis-L=16
+  AUC (attendu ~0.5 avant training) : 0.320
+SampleSeparator ✓
+Loss functions ✓
+  Ω(t=20) = 0.375
+  Ω(t=99) = 0.000
+  Ω(t=100)= 0.000
+  L_correct  = 2.1681
+  L_mis_h    = 0.3671
+  L_mis_l    = 0.8730
+  L_ssl      = 3.4082
+  L_con      = 1.6951
+  L_reg      = 0.0483
+  L_total    = 5.1517
+  L_total  = 5.1517  (gradient: False)
+QMixEngine ✓  mode=ce  run=ce_ddr_v1
+Params total : 23.52 M  (1 réseau(x))
+QMixEngine ✓  mode=qmix  run=qmix_ddr_v1
+Params total : 55.95 M  (2 réseau(x))
+
+QMixEngine CE   ✓
+QMixEngine QMix ✓
+save_history / load_history / save_weights / load_weights / log_experiment attachés ✓
+log_experiment (avec CO₂) re-attaché à QMixEngine ✓
+Patch CodeCarbon appliqué à QMixEngine ✓
+  fit() → tracking CO₂ par époque
+plot_confusion_matrix attaché à QMixEngine ✓
+=======================================================
+Chargement des datasets DDR …
+=======================================================
+[DDRDatasetCE] split=train |  6260 imgs | C0=3133, C1=315, C2=2238, C3=118, C4=456
+[DDRDatasetCE] split=valid |  2503 imgs | C0=1253, C1=126, C2=895, C3=47, C4=182
+[DDRDatasetCE] split=test  |  3759 imgs | C0=1880, C1=189, C2=1344, C3=71, C4=275
+[DDRDatasetQMix] split=train |  7199 samples | Correct=3130 Mis-H=3130 Mis-L=939
+                 dist Correct : C0=1555, C1=156, C2=1132, C3=65, C4=222
+[DDRDatasetQMix] split=valid |  2503 samples | Correct=2503 Mis-H=0 Mis-L=0
+                 dist Correct : C0=1253, C1=126, C2=895, C3=47, C4=182
+[DDRDatasetQMix] split=test  |  3759 samples | Correct=3759 Mis-H=0 Mis-L=0
+                 dist Correct : C0=1880, C1=189, C2=1344, C3=71, C4=275
+
+Loaders prêts ✓
+  CE  train=6260  val=2503  test=3759
+  QMx train=7199  val=2503  test=3759
+
+=======================================================
+Runner Standard CE
+=======================================================
+QMixEngine ✓  mode=ce  run=ce_ddr_v1
+Params total : 23.52 M  (1 réseau(x))
+Pas encore entraîné.
+  CO₂ époque 1 : 0.000533 kg
+Ep 001/50 [CE] lr=0.00010 | train loss=0.7500 kappa=0.6554 | val   loss=0.5876 kappa=0.7669
+  CO₂ époque 2 : 0.000545 kg
+Ep 002/50 [CE] lr=0.00020 | train loss=0.6789 kappa=0.7136 | val   loss=0.6144 kappa=0.7794
+  CO₂ époque 3 : 0.000552 kg
+Ep 003/50 [CE] lr=0.00030 | train loss=0.6999 kappa=0.6915 | val   loss=0.6242 kappa=0.8047
+  CO₂ époque 4 : 0.000534 kg
+Ep 004/50 [CE] lr=0.00040 | train loss=0.6790 kappa=0.7076 | val   loss=0.5636 kappa=0.8351
+  CO₂ époque 5 : 0.000545 kg
+Ep 005/50 [CE] lr=0.00050 | train loss=0.6955 kappa=0.7054 | val   loss=0.7654 kappa=0.6456
+  CO₂ époque 6 : 0.000548 kg
+Ep 006/50 [CE] lr=0.00060 | train loss=0.6993 kappa=0.7028 | val   loss=0.7793 kappa=0.5835
+  CO₂ époque 7 : 0.000540 kg
+Ep 007/50 [CE] lr=0.00070 | train loss=0.6784 kappa=0.7024 | val   loss=0.7379 kappa=0.6725
+  CO₂ époque 8 : 0.000538 kg
+Ep 008/50 [CE] lr=0.00080 | train loss=0.6878 kappa=0.7148 | val   loss=1.1402 kappa=0.4937
+  CO₂ époque 9 : 0.000536 kg
+Ep 009/50 [CE] lr=0.00090 | train loss=0.6832 kappa=0.7065 | val   loss=1.3963 kappa=0.3848
+  CO₂ époque 10 : 0.000530 kg
+Ep 010/50 [CE] lr=0.00100 | train loss=0.6862 kappa=0.7052 | val   loss=1.7951 kappa=0.1999
+  CO₂ époque 11 : 0.000537 kg
+Ep 011/50 [CE] lr=0.00100 | train loss=0.6757 kappa=0.7104 | val   loss=0.6976 kappa=0.7958
+  CO₂ époque 12 : 0.000532 kg
+Ep 012/50 [CE] lr=0.00100 | train loss=0.6625 kappa=0.7117 | val   loss=0.5796 kappa=0.8072
+  CO₂ époque 13 : 0.000537 kg
+Ep 013/50 [CE] lr=0.00099 | train loss=0.6379 kappa=0.7401 | val   loss=0.6370 kappa=0.7401
+  CO₂ époque 14 : 0.000539 kg
+Ep 014/50 [CE] lr=0.00099 | train loss=0.6348 kappa=0.7364 | val   loss=0.7750 kappa=0.7839
+  CO₂ époque 15 : 0.000539 kg
+Ep 015/50 [CE] lr=0.00098 | train loss=0.6231 kappa=0.7382 | val   loss=0.6717 kappa=0.7475
+  CO₂ époque 16 : 0.000538 kg
+Ep 016/50 [CE] lr=0.00096 | train loss=0.6078 kappa=0.7593 | val   loss=0.7259 kappa=0.8116
+  CO₂ époque 17 : 0.000532 kg
+Ep 017/50 [CE] lr=0.00095 | train loss=0.5890 kappa=0.7679 | val   loss=0.5848 kappa=0.7757
+  CO₂ époque 18 : 0.000531 kg
+Ep 018/50 [CE] lr=0.00093 | train loss=0.5864 kappa=0.7655 | val   loss=0.6028 kappa=0.7665
+  CO₂ époque 19 : 0.000534 kg
+Ep 019/50 [CE] lr=0.00090 | train loss=0.5693 kappa=0.7853 | val   loss=0.5862 kappa=0.7876
+  CO₂ époque 20 : 0.000545 kg
+Ep 020/50 [CE] lr=0.00088 | train loss=0.5679 kappa=0.7807 | val   loss=0.6216 kappa=0.7446
+  CO₂ époque 21 : 0.000531 kg
+Ep 021/50 [CE] lr=0.00085 | train loss=0.5570 kappa=0.7930 | val   loss=0.5381 kappa=0.8140
+  CO₂ époque 22 : 0.000539 kg
+Ep 022/50 [CE] lr=0.00082 | train loss=0.5454 kappa=0.7815 | val   loss=0.6088 kappa=0.8361
+  CO₂ époque 23 : 0.000538 kg
+Ep 023/50 [CE] lr=0.00079 | train loss=0.5444 kappa=0.7933 | val   loss=0.5414 kappa=0.8544
+  CO₂ époque 24 : 0.000535 kg
+Ep 024/50 [CE] lr=0.00076 | train loss=0.5368 kappa=0.7919 | val   loss=0.5885 kappa=0.7699
+  CO₂ époque 25 : 0.000539 kg
+Ep 025/50 [CE] lr=0.00073 | train loss=0.5121 kappa=0.8065 | val   loss=0.5780 kappa=0.8363
+  CO₂ époque 26 : 0.000539 kg
+Ep 026/50 [CE] lr=0.00069 | train loss=0.5050 kappa=0.8222 | val   loss=0.5547 kappa=0.8484
+  CO₂ époque 27 : 0.000536 kg
+Ep 027/50 [CE] lr=0.00065 | train loss=0.4884 kappa=0.8277 | val   loss=0.5429 kappa=0.8300
+  CO₂ époque 28 : 0.000527 kg
+Ep 028/50 [CE] lr=0.00062 | train loss=0.4777 kappa=0.8365 | val   loss=0.5417 kappa=0.8116
+  CO₂ époque 29 : 0.000538 kg
+Ep 029/50 [CE] lr=0.00058 | train loss=0.4698 kappa=0.8410 | val   loss=0.5280 kappa=0.8457
+  CO₂ époque 30 : 0.000533 kg
+Ep 030/50 [CE] lr=0.00054 | train loss=0.4566 kappa=0.8481 | val   loss=0.5344 kappa=0.8332
+  CO₂ époque 31 : 0.000531 kg
+Ep 031/50 [CE] lr=0.00050 | train loss=0.4379 kappa=0.8491 | val   loss=0.5808 kappa=0.8210
+  CO₂ époque 32 : 0.000534 kg
+Ep 032/50 [CE] lr=0.00046 | train loss=0.4271 kappa=0.8607 | val   loss=0.5369 kappa=0.8525
+  CO₂ époque 33 : 0.000538 kg
+Ep 033/50 [CE] lr=0.00042 | train loss=0.4295 kappa=0.8532 | val   loss=0.5174 kappa=0.8391
+  CO₂ époque 34 : 0.000529 kg
+Ep 034/50 [CE] lr=0.00038 | train loss=0.4071 kappa=0.8686 | val   loss=0.5017 kappa=0.8472
+  CO₂ époque 35 : 0.000532 kg
+Ep 035/50 [CE] lr=0.00035 | train loss=0.4053 kappa=0.8669 | val   loss=0.4751 kappa=0.8532
+  CO₂ époque 36 : 0.000537 kg
+Ep 036/50 [CE] lr=0.00031 | train loss=0.3916 kappa=0.8713 | val   loss=0.5165 kappa=0.8476
+  CO₂ époque 37 : 0.000535 kg
+Ep 037/50 [CE] lr=0.00027 | train loss=0.3771 kappa=0.8783 | val   loss=0.4796 kappa=0.8492
+  CO₂ époque 38 : 0.000536 kg
+Ep 038/50 [CE] lr=0.00024 | train loss=0.3586 kappa=0.8891 | val   loss=0.4863 kappa=0.8443
+  CO₂ époque 39 : 0.000536 kg
+Ep 039/50 [CE] lr=0.00021 | train loss=0.3557 kappa=0.8897 | val   loss=0.4862 kappa=0.8577
+  CO₂ époque 40 : 0.000536 kg
+Ep 040/50 [CE] lr=0.00018 | train loss=0.3407 kappa=0.8923 | val   loss=0.4862 kappa=0.8490
+  CO₂ époque 41 : 0.000538 kg
+Ep 041/50 [CE] lr=0.00015 | train loss=0.3326 kappa=0.8997 | val   loss=0.4887 kappa=0.8611
+  CO₂ époque 42 : 0.000546 kg
+Ep 042/50 [CE] lr=0.00012 | train loss=0.3184 kappa=0.9043 | val   loss=0.5194 kappa=0.8644
+  CO₂ époque 43 : 0.000535 kg
+Ep 043/50 [CE] lr=0.00010 | train loss=0.3082 kappa=0.9061 | val   loss=0.5138 kappa=0.8557
+  CO₂ époque 44 : 0.000536 kg
+Ep 044/50 [CE] lr=0.00007 | train loss=0.3034 kappa=0.9139 | val   loss=0.4752 kappa=0.8605
+  CO₂ époque 45 : 0.000530 kg
+Ep 045/50 [CE] lr=0.00006 | train loss=0.2906 kappa=0.9133 | val   loss=0.4787 kappa=0.8633
+  CO₂ époque 46 : 0.000535 kg
+Ep 046/50 [CE] lr=0.00004 | train loss=0.2957 kappa=0.9091 | val   loss=0.4840 kappa=0.8696
+  CO₂ époque 47 : 0.000539 kg
+Ep 047/50 [CE] lr=0.00003 | train loss=0.2777 kappa=0.9169 | val   loss=0.4744 kappa=0.8685
+  CO₂ époque 48 : 0.000531 kg
+Ep 048/50 [CE] lr=0.00001 | train loss=0.2826 kappa=0.9196 | val   loss=0.4822 kappa=0.8653
+  CO₂ époque 49 : 0.000534 kg
+Ep 049/50 [CE] lr=0.00001 | train loss=0.2820 kappa=0.9199 | val   loss=0.4846 kappa=0.8664
+  CO₂ époque 50 : 0.000533 kg
+Ep 050/50 [CE] lr=0.00000 | train loss=0.2826 kappa=0.9242 | val   loss=0.4866 kappa=0.8702
+
+=======================================================
+Run : ce_ddr_v1  [CE]
+  Best kappa (val)  : 0.8702  (époque 50)
+  Last kappa (val)  : 0.8702
+  Avg last-10 kappa : 0.8645
+  Ep 0 train : VRAM=7560 MB  t=166.7s  |  val : VRAM=1316 MB  t=50.9s
+  Ep 1 train : VRAM=7560 MB  t=172.5s  |  val : VRAM=1316 MB  t=50.0s
+=======================================================
+
+Checkpoint sauvegardé : 20260628-ips-project/results/master2-qmix-standard-ce/exp_001/runs/ce_ddr_v1/ce_ddr_v1.pt
+Poids sauvegardés : 20260628-ips-project/results/master2-qmix-standard-ce/exp_001/runs/ce_ddr_v1/ce_ddr_v1_weights.pt
+History sauvegardée : 20260628-ips-project/results/master2-qmix-standard-ce/exp_001/runs/ce_ddr_v1/ce_ddr_v1_history.json
+Expérience sauvegardée : 20260628-ips-project/results/master2-qmix-standard-ce/exp_001/runs/ce_ddr_v1/ce_ddr_v1_experiment.csv
+Saved : 20260628-ips-project/results/master2-qmix-standard-ce/exp_001/runs/ce_ddr_v1/ce_ddr_v1_confusion_matrix.png
+
+Classification Report
+              precision    recall  f1-score   support
+
+       No DR       0.79      0.98      0.88      1880
+        Mild       0.17      0.08      0.11       189
+    Moderate       0.80      0.65      0.71      1344
+      Severe       0.61      0.42      0.50        71
+     Prolif.       0.85      0.64      0.73       275
+
+    accuracy                           0.78      3759
+   macro avg       0.65      0.55      0.59      3759
+weighted avg       0.77      0.78      0.76      3759
+
+
+CO₂ total CE      : 0.026817 kg
+CO₂ par époque CE : 0.000536 kg
+
+── Évaluation test (CE) ──
+  Test loss  : 0.7115
+  Test kappa : 0.7758  (papier sans bruit ~0.883)
+  Test acc   : 0.7816
+  Test F1    : 0.5868
+
+=======================================================
+Runner QMix
+=======================================================
+QMixEngine ✓  mode=qmix  run=qmix_ddr_v1
+Params total : 55.95 M  (2 réseau(x))
+Pas encore entraîné.
+  CO₂ époque 1 : 0.001543 kg
+Ep 001/50 [QMIX] lr=0.00010 | train loss=1.5559 kappa=0.0897 | val   loss=1.1340 kappa=0.5219
+  CO₂ époque 2 : 0.001546 kg
+Ep 002/50 [QMIX] lr=0.00020 | train loss=1.5419 kappa=0.1160 | val   loss=1.1264 kappa=0.6516
+  CO₂ époque 3 : 0.001539 kg
+Ep 003/50 [QMIX] lr=0.00030 | train loss=1.5458 kappa=0.1078 | val   loss=1.2512 kappa=0.3079
+  CO₂ époque 4 : 0.001542 kg
+Ep 004/50 [QMIX] lr=0.00040 | train loss=1.5431 kappa=0.1067 | val   loss=1.2901 kappa=0.3773
+  CO₂ époque 5 : 0.001554 kg
+Ep 005/50 [QMIX] lr=0.00050 | train loss=1.5477 kappa=0.0823 | val   loss=1.1818 kappa=0.3358
+  CO₂ époque 6 : 0.001530 kg
+Ep 006/50 [QMIX] lr=0.00060 | train loss=1.5421 kappa=0.0883 | val   loss=1.2284 kappa=0.5603
+  CO₂ époque 7 : 0.001515 kg
+Ep 007/50 [QMIX] lr=0.00070 | train loss=1.5428 kappa=0.0894 | val   loss=1.2139 kappa=0.5133
+  CO₂ époque 8 : 0.001451 kg
+Ep 008/50 [QMIX] lr=0.00080 | train loss=1.5443 kappa=0.0945 | val   loss=1.2388 kappa=0.4826
+  CO₂ époque 9 : 0.001445 kg
+Ep 009/50 [QMIX] lr=0.00090 | train loss=1.5561 kappa=0.0497 | val   loss=1.2922 kappa=0.3251
+  CO₂ époque 10 : 0.001446 kg
+Ep 010/50 [QMIX] lr=0.00100 | train loss=1.5593 kappa=0.0415 | val   loss=1.3254 kappa=0.4722
+  CO₂ époque 11 : 0.003245 kg
+Ep 011/50 [QMIX] lr=0.00100 | train loss=4.6282 kappa=0.0039 | val   loss=1.5044 kappa=-0.0361
+  CO₂ époque 12 : 0.003246 kg
+Ep 012/50 [QMIX] lr=0.00100 | train loss=4.6679 kappa=0.0004 | val   loss=1.5405 kappa=0.0044
+  CO₂ époque 13 : 0.003238 kg
+Ep 013/50 [QMIX] lr=0.00099 | train loss=5.1338 kappa=0.0017 | val   loss=1.8136 kappa=-0.0149
+  CO₂ époque 14 : 0.003245 kg
+Ep 014/50 [QMIX] lr=0.00099 | train loss=4.6061 kappa=0.0236 | val   loss=1.3509 kappa=0.0199
+  CO₂ époque 15 : 0.003239 kg
+Ep 015/50 [QMIX] lr=0.00098 | train loss=4.3278 kappa=-0.0110 | val   loss=1.6988 kappa=0.0031
+  CO₂ époque 16 : 0.003240 kg
+Ep 016/50 [QMIX] lr=0.00096 | train loss=4.2840 kappa=0.0080 | val   loss=1.4071 kappa=0.0565
+  CO₂ époque 17 : 0.003235 kg
+Ep 017/50 [QMIX] lr=0.00095 | train loss=4.3619 kappa=-0.0033 | val   loss=1.7630 kappa=0.0653
+  CO₂ époque 18 : 0.003234 kg
+Ep 018/50 [QMIX] lr=0.00093 | train loss=4.1597 kappa=0.0007 | val   loss=1.4357 kappa=0.0820
+  CO₂ époque 19 : 0.003236 kg
+Ep 019/50 [QMIX] lr=0.00090 | train loss=4.1463 kappa=0.0031 | val   loss=1.6331 kappa=0.1148
+  CO₂ époque 20 : 0.003244 kg
+Ep 020/50 [QMIX] lr=0.00088 | train loss=4.0573 kappa=-0.0051 | val   loss=1.9997 kappa=0.1128
+  CO₂ époque 21 : 0.003242 kg
+Ep 021/50 [QMIX] lr=0.00085 | train loss=4.1247 kappa=-0.0139 | val   loss=1.5248 kappa=0.1359
+  CO₂ époque 22 : 0.003235 kg
+Ep 022/50 [QMIX] lr=0.00082 | train loss=4.1792 kappa=-0.0075 | val   loss=1.6486 kappa=0.1435
+  CO₂ époque 23 : 0.003236 kg
+Ep 023/50 [QMIX] lr=0.00079 | train loss=4.1806 kappa=0.0065 | val   loss=1.6892 kappa=0.1405
+  CO₂ époque 24 : 0.003228 kg
+Ep 024/50 [QMIX] lr=0.00076 | train loss=3.9714 kappa=-0.0038 | val   loss=1.5535 kappa=0.1647
+  CO₂ époque 25 : 0.003223 kg
+Ep 025/50 [QMIX] lr=0.00073 | train loss=4.0392 kappa=-0.0184 | val   loss=1.5295 kappa=0.1709
+  CO₂ époque 26 : 0.003222 kg
+Ep 026/50 [QMIX] lr=0.00069 | train loss=4.2035 kappa=-0.0143 | val   loss=1.4972 kappa=0.1489
+  CO₂ époque 27 : 0.003224 kg
+Ep 027/50 [QMIX] lr=0.00065 | train loss=3.7458 kappa=-0.0084 | val   loss=1.5586 kappa=0.0989
+  CO₂ époque 28 : 0.003225 kg
+Ep 028/50 [QMIX] lr=0.00062 | train loss=3.9755 kappa=-0.0072 | val   loss=1.5265 kappa=0.1057
+  CO₂ époque 29 : 0.003217 kg
+Ep 029/50 [QMIX] lr=0.00058 | train loss=3.8638 kappa=-0.0178 | val   loss=1.7294 kappa=0.1434
+  CO₂ époque 30 : 0.003213 kg
+Ep 030/50 [QMIX] lr=0.00054 | train loss=4.2153 kappa=-0.0202 | val   loss=1.5683 kappa=0.1579
+  CO₂ époque 31 : 0.003219 kg
+Ep 031/50 [QMIX] lr=0.00050 | train loss=4.1251 kappa=-0.0222 | val   loss=1.6342 kappa=0.0212
+  CO₂ époque 32 : 0.003223 kg
+Ep 032/50 [QMIX] lr=0.00046 | train loss=4.2193 kappa=-0.0014 | val   loss=1.5679 kappa=0.0680
+  CO₂ époque 33 : 0.003225 kg
+Ep 033/50 [QMIX] lr=0.00042 | train loss=4.0679 kappa=-0.0196 | val   loss=1.7531 kappa=0.0204
+  CO₂ époque 34 : 0.003215 kg
+Ep 034/50 [QMIX] lr=0.00038 | train loss=3.4156 kappa=-0.0192 | val   loss=1.9145 kappa=0.0399
+  CO₂ époque 35 : 0.003214 kg
+Ep 035/50 [QMIX] lr=0.00035 | train loss=3.2916 kappa=-0.0031 | val   loss=2.0513 kappa=0.0365
+  CO₂ époque 36 : 0.003216 kg
+Ep 036/50 [QMIX] lr=0.00031 | train loss=3.7181 kappa=-0.0211 | val   loss=1.9202 kappa=0.0412
+  CO₂ époque 37 : 0.003213 kg
+Ep 037/50 [QMIX] lr=0.00027 | train loss=3.3735 kappa=-0.0260 | val   loss=1.9547 kappa=0.0524
+  CO₂ époque 38 : 0.003226 kg
+Ep 038/50 [QMIX] lr=0.00024 | train loss=3.9473 kappa=-0.0137 | val   loss=1.8295 kappa=0.0632
+  CO₂ époque 39 : 0.003226 kg
+Ep 039/50 [QMIX] lr=0.00021 | train loss=3.6385 kappa=-0.0235 | val   loss=1.7339 kappa=-0.0548
+  CO₂ époque 40 : 0.003222 kg
+Ep 040/50 [QMIX] lr=0.00018 | train loss=3.1722 kappa=-0.0212 | val   loss=2.1400 kappa=0.1231
+  CO₂ époque 41 : 0.003221 kg
+Ep 041/50 [QMIX] lr=0.00015 | train loss=4.0200 kappa=-0.0114 | val   loss=1.8528 kappa=0.0925
+  CO₂ époque 42 : 0.003225 kg
+Ep 042/50 [QMIX] lr=0.00012 | train loss=3.5696 kappa=-0.0062 | val   loss=1.8152 kappa=0.0843
+  CO₂ époque 43 : 0.003222 kg
+Ep 043/50 [QMIX] lr=0.00010 | train loss=3.9058 kappa=-0.0296 | val   loss=1.6901 kappa=-0.0161
+  CO₂ époque 44 : 0.003223 kg
+Ep 044/50 [QMIX] lr=0.00007 | train loss=3.8211 kappa=-0.0348 | val   loss=1.7404 kappa=-0.0628
+  CO₂ époque 45 : 0.003221 kg
+Ep 045/50 [QMIX] lr=0.00006 | train loss=3.1318 kappa=-0.0223 | val   loss=1.9536 kappa=-0.0513
+  CO₂ époque 46 : 0.003236 kg
+Ep 046/50 [QMIX] lr=0.00004 | train loss=3.0029 kappa=-0.0298 | val   loss=2.1074 kappa=-0.0244
+  CO₂ époque 47 : 0.003226 kg
+Ep 047/50 [QMIX] lr=0.00003 | train loss=3.1778 kappa=-0.0239 | val   loss=2.2163 kappa=0.0452
+  CO₂ époque 48 : 0.003230 kg
+Ep 048/50 [QMIX] lr=0.00001 | train loss=3.6410 kappa=-0.0223 | val   loss=2.0783 kappa=0.0168
+  CO₂ époque 49 : 0.003222 kg
+Ep 049/50 [QMIX] lr=0.00001 | train loss=3.4198 kappa=-0.0194 | val   loss=2.1612 kappa=-0.0085
+  CO₂ époque 50 : 0.003220 kg
+Ep 050/50 [QMIX] lr=0.00000 | train loss=3.3838 kappa=-0.0277 | val   loss=2.1709 kappa=0.0019
+
+=======================================================
+Run : qmix_ddr_v1  [QMIX]
+  Best kappa (val)  : 0.6516  (époque 2)
+  Last kappa (val)  : 0.0019
+  Avg last-10 kappa : 0.0078
+  Ep 0 train : VRAM=8349 MB  t=560.1s  |  val : VRAM=2105 MB  t=76.6s
+  Ep 1 train : VRAM=8349 MB  t=562.6s  |  val : VRAM=2105 MB  t=74.1s
+=======================================================
+
+Checkpoint sauvegardé : 20260628-ips-project/results/master2-qmix-standard-ce/exp_001/runs/qmix_ddr_v1/qmix_ddr_v1.pt
+Poids sauvegardés : 20260628-ips-project/results/master2-qmix-standard-ce/exp_001/runs/qmix_ddr_v1/qmix_ddr_v1_weights.pt
+History sauvegardée : 20260628-ips-project/results/master2-qmix-standard-ce/exp_001/runs/qmix_ddr_v1/qmix_ddr_v1_history.json
+Expérience sauvegardée : 20260628-ips-project/results/master2-qmix-standard-ce/exp_001/runs/qmix_ddr_v1/qmix_ddr_v1_experiment.csv
+Saved : 20260628-ips-project/results/master2-qmix-standard-ce/exp_001/runs/qmix_ddr_v1/qmix_ddr_v1_confusion_matrix.png
+
+Classification Report
+              precision    recall  f1-score   support
+
+       No DR       0.52      0.70      0.60      1880
+        Mild       0.00      0.00      0.00       189
+    Moderate       0.36      0.33      0.35      1344
+      Severe       0.00      0.00      0.00        71
+     Prolif.       1.00      0.00      0.01       275
+
+    accuracy                           0.47      3759
+   macro avg       0.38      0.21      0.19      3759
+weighted avg       0.46      0.47      0.42      3759
+
+
+CO₂ total QMix      : 0.144222 kg
+CO₂ par époque QMix : 0.002884 kg
+
+── Évaluation test (QMix) ──
+  Test loss  : 2.0498
+  Test kappa : 0.0789  (papier 50H+15L ~0.879)
+  Test acc   : 0.4685
+  Test F1    : 0.1903
+
+=======================================================
+                  Comparaison finale                   
+=======================================================
+Méthode           Test Kappa   Test Acc    Test F1     CO₂ (kg)
+------------------------------------------------------------
+Standard CE           0.7758     0.7816     0.5868     0.026817
+QMix                  0.0789     0.4685     0.1903     0.144222
+Δ (QMix-CE)          -0.6969    -0.3131    -0.3966
+=======================================================
+
+Résultats CE   → 20260628-ips-project/results/master2-qmix-standard-ce/exp_001/runs/ce_ddr_v1
+Résultats QMix → 20260628-ips-project/results/master2-qmix-standard-ce/exp_001/runs/qmix_ddr_v1
+=========================================
+Terminé : Mon Jun 29 09:21:59 PM CEST 2026
+Exit code : 0
+
+[DONE] Succès.
+
+── Résultats dans 20260628-ips-project/results/master2-qmix-standard-ce/exp_001 ──
+
+  [ce_ddr_v1]
+    Checkpoints :
+      ce_ddr_v1.pt                                             270 MB
+      ce_ddr_v1_weights.pt                                     91 MB
+    History :
+      ce_ddr_v1_history.json
+    Experiments :
+      ce_ddr_v1_experiment.csv
+    Confusion matrix :
+      ce_ddr_v1_confusion_matrix.png
+
+  [qmix_ddr_v1]
+    Checkpoints :
+      qmix_ddr_v1.pt                                           642 MB
+      qmix_ddr_v1_weights.pt                                   215 MB
+    History :
+      qmix_ddr_v1_history.json
+    Experiments :
+      qmix_ddr_v1_experiment.csv
+    Confusion matrix :
+      qmix_ddr_v1_confusion_matrix.png
