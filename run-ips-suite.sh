@@ -63,8 +63,9 @@ DATASETS=(
     "iamtapendu/rsna-pneumonia-processed-dataset"
 )
 
-RUN_NAME="${1:-}"          # vide = les 21 configurations
-TAG="${RUN_NAME:-all}"
+RUN_NAME="${1:-}"          # vide = les 21 configurations ; sinon un nom
+                           # ou une liste separee par des virgules
+TAG=$(printf '%s' "${RUN_NAME:-all}" | tr ',' '+' | cut -c1-50)
 
 # =============================================================================
 #  Chemins cluster
@@ -291,6 +292,11 @@ echo ""
 echo "[RUN] Démarrage — $(date)"
 echo "========================================="
 
+# Repere temporel : le resume ne listera que les fichiers ecrits par ce job,
+# ce qui marche aussi bien pour un modele que pour un groupe.
+STAMP=".stamp_${SLURM_JOB_ID:-local}_$$"
+touch "$STAMP"
+
 set +e
 python "$SCRIPT_PY"
 EXIT_CODE=$?
@@ -314,7 +320,7 @@ if [ $EXIT_CODE -eq 0 ]; then
 
     echo ""
     echo "  Checkpoints :"
-    find "$RD/checkpoints" -name "*${RUN_NAME}*.pt" 2>/dev/null | sort \
+    find "$RD/checkpoints" -name "*.pt" -newer "$STAMP" 2>/dev/null | sort \
         | while read f; do
             printf "    %-52s  %s MB\n" \
                 "$(basename "$f")" "$(du -m "$f" | cut -f1)"
@@ -322,19 +328,19 @@ if [ $EXIT_CODE -eq 0 ]; then
 
     echo ""
     echo "  History :"
-    find "$RD/history" -maxdepth 1 -name "*${RUN_NAME}*_history.json" 2>/dev/null \
-        | sort | while read f; do echo "    $(basename "$f")"; done
+    find "$RD/history" -maxdepth 1 -name "*_history.json" -newer "$STAMP" \
+        2>/dev/null | sort | while read f; do echo "    $(basename "$f")"; done
 
     echo ""
     echo "  Experiments :"
-    find "$RD/experiments" -name "*${RUN_NAME}*" 2>/dev/null | sort \
+    find "$RD/experiments" -type f -newer "$STAMP" 2>/dev/null | sort \
         | while read f; do echo "    $(basename "$f")"; done
 
     echo ""
     echo "  Saillance :"
     for DS in ddr rsna; do
-        PNG=$(find "$RD/saliency/$DS" -name "*${RUN_NAME}*.png" 2>/dev/null | wc -l)
-        CSV=$(find "$RD/saliency/$DS" -name "*${RUN_NAME}*.csv" 2>/dev/null | wc -l)
+        PNG=$(find "$RD/saliency/$DS" -name "*.png" -newer "$STAMP" 2>/dev/null | wc -l)
+        CSV=$(find "$RD/saliency/$DS" -name "*.csv" -newer "$STAMP" 2>/dev/null | wc -l)
         if [ "$PNG" -gt 0 ] || [ "$CSV" -gt 0 ]; then
             echo "    $DS : $PNG PNG, $CSV CSV"
         fi
@@ -342,12 +348,12 @@ if [ $EXIT_CODE -eq 0 ]; then
 
     echo ""
     echo "── Résumé des métriques ──"
-    for f in "$RD"/experiments/*"${RUN_NAME}"*_experiment.csv; do
-        [ -e "$f" ] || continue
-        echo ""
-        echo "  $(basename "$f")"
-        head -3 "$f" | tail -2 | cut -c1-240
-    done
+    find "$RD/experiments" -name "*_experiment.csv" -newer "$STAMP" 2>/dev/null \
+        | sort | while read f; do
+            echo ""
+            echo "  $(basename "$f")"
+            head -3 "$f" | tail -2 | cut -c1-240
+          done
 
 else
     echo ""
@@ -355,5 +361,6 @@ else
     echo "Log : $WORK_DIR/logs/${SLURM_JOB_NAME:-ips_suite}_${SLURM_JOB_ID:-0}.err"
 fi
 
+rm -f "$STAMP"
 deactivate
 exit $EXIT_CODE
