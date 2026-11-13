@@ -1,0 +1,62 @@
+{
+  "uniform": {
+    "metrics": {
+      "accuracy": 0.777361880521036,
+      "f1": 0.024918032786885248,
+      "precision": 0.8636363636363636,
+      "recall": 0.012641383898868928,
+      "auc": 0.7707790883971366,
+      "loss": 0.48572582002884795
+    },
+    "cost": {
+      "px_explore_per_img": 0.0,
+      "px_classify_per_img": 76210.49857763138,
+      "px_total_per_img": 76210.49857763138,
+      "n_images": 6679,
+      "scale_counts": [
+        3832,
+        62958
+      ]
+    }
+  },
+  "scale_matched": {
+    "metrics": {
+      "accuracy": 0.776014373409193,
+      "f1": 0.010582010582010581,
+      "precision": 0.8888888888888888,
+      "recall": 0.0053226879574184965,
+      "auc": 0.7564087435638769,
+      "loss": 0.49357252998486983
+    },
+    "cost": {
+      "px_explore_per_img": 1310720.0,
+      "px_classify_per_img": 40960.0,
+      "px_total_per_img": 1351680.0,
+      "n_images": 6679,
+      "scale_counts": [
+        0,
+        66790
+      ]
+    }
+  },
+  "topm": {
+    "metrics": {
+      "accuracy": 0.8397963767030993,
+      "f1": 0.581377151799687,
+      "precision": 0.7056030389363722,
+      "recall": 0.49434464404524286,
+      "auc": 0.8630233093832942,
+      "loss": 0.36742222248874284
+    },
+    "cost": {
+      "px_explore_per_img": 1310720.0,
+      "px_classify_per_img": 40960.0,
+      "px_total_per_img": 1351680.0,
+      "n_images": 6679,
+      "scale_counts": [
+        0,
+        66790
+      ]
+    }
+  }
+}

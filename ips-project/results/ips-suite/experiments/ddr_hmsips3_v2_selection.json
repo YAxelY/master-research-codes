@@ -1,0 +1,59 @@
+{
+  "uniform": {
+    "metrics": {
+      "accuracy": 0.533359968038354,
+      "kappa": 0.18776165269264378,
+      "f1": 0.2168510446487228,
+      "loss": 1.1253931762407268
+    },
+    "cost": {
+      "px_explore_per_img": 0.0,
+      "px_classify_per_img": 5376.883739512585,
+      "px_total_per_img": 5376.883739512585,
+      "n_images": 2503,
+      "scale_counts": [
+        84,
+        1481,
+        23465
+      ]
+    }
+  },
+  "scale_matched": {
+    "metrics": {
+      "accuracy": 0.5105872952457051,
+      "kappa": 0.143891238090616,
+      "f1": 0.20046670651305196,
+      "loss": 1.1334706227206917
+    },
+    "cost": {
+      "px_explore_per_img": 1028608.0,
+      "px_classify_per_img": 1960.0,
+      "px_total_per_img": 1030568.0,
+      "n_images": 2503,
+      "scale_counts": [
+        0,
+        0,
+        25030
+      ]
+    }
+  },
+  "topm": {
+    "metrics": {
+      "accuracy": 0.6592089492608869,
+      "kappa": 0.5172177814095825,
+      "f1": 0.2913189826169885,
+      "loss": 0.8883510887075128
+    },
+    "cost": {
+      "px_explore_per_img": 1028608.0,
+      "px_classify_per_img": 1960.0,
+      "px_total_per_img": 1030568.0,
+      "n_images": 2503,
+      "scale_counts": [
+        0,
+        0,
+        25030
+      ]
+    }
+  }
+}

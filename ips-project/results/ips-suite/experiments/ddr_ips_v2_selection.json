@@ -1,0 +1,53 @@
+{
+  "uniform": {
+    "metrics": {
+      "accuracy": 0.7299240910906911,
+      "kappa": 0.6740177289440583,
+      "f1": 0.4853138177365531,
+      "loss": 1.0995263830035675
+    },
+    "cost": {
+      "px_explore_per_img": 0.0,
+      "px_classify_per_img": 163840.0,
+      "px_total_per_img": 163840.0,
+      "n_images": 2503,
+      "scale_counts": [
+        25030
+      ]
+    }
+  },
+  "scale_matched": {
+    "metrics": {
+      "accuracy": 0.7315221733919297,
+      "kappa": 0.658681100966702,
+      "f1": 0.4939685759743778,
+      "loss": 1.0586663959410207
+    },
+    "cost": {
+      "px_explore_per_img": 802816.0,
+      "px_classify_per_img": 163840.0,
+      "px_total_per_img": 966656.0,
+      "n_images": 2503,
+      "scale_counts": [
+        25030
+      ]
+    }
+  },
+  "topm": {
+    "metrics": {
+      "accuracy": 0.8529764282860567,
+      "kappa": 0.8935058281507017,
+      "f1": 0.6724426067225976,
+      "loss": 0.5371518741490909
+    },
+    "cost": {
+      "px_explore_per_img": 802816.0,
+      "px_classify_per_img": 163840.0,
+      "px_total_per_img": 966656.0,
+      "n_images": 2503,
+      "scale_counts": [
+        25030
+      ]
+    }
+  }
+}
