@@ -249,13 +249,15 @@ generator, reseeded before each evaluation, so an evaluation is repeatable.
 | | Train | Validation (choose epoch) | Test (report) |
 |---|---|---|---|
 | DDR | `train` | `valid` | `test`, never used in v2 |
-| RSNA | the v2 training set, unchanged (75 % of patients) | 12 % | 13 % |
+| RSNA | 70 % of patients | 15 % | 15 % |
 
-The RSNA validation and test parts come from cutting the v2 validation
-part in two with the same hash. v2 weights have seen both halves when
-choosing their epoch, so on RSNA only v3 runs have a clean test score. On
-DDR, v2 weights can be scored cleanly on test right now
-(`IPS_MODE=eval_v2`).
+RSNA is split 70 / 15 / 15 by a hash of the patient identifier (decided
+on 15 November, for a standard split). The v3 training set is a subset of
+the v2 one. v2 weights chose their epoch on images now in validation and
+test, and were trained on 5 % of the patients now in validation or test,
+so on RSNA only v3 runs have a clean test score; `eval_v2` output for RSNA
+is flagged as not clean. On DDR, v2 weights can be scored cleanly on test
+right now (`IPS_MODE=eval_v2`).
 
 ### 7.1 What the dataset probe showed (15 November, real data)
 
@@ -333,7 +335,7 @@ test 67, absent 2.
 |---|---|
 | Patients (one image each, all 1024×1024, 8 bit) | 26 684 |
 | Classes | Lung Opacity 6 012 patients; Normal; No Lung Opacity / Not Normal |
-| v3 split, patients (positives) | train 20 005 (4 509), val 3 127 (692), test 3 552 (811) |
+| v3 split | 70 / 15 / 15 by patient: about 18 700 / 4 000 / 4 000; exact counts are printed at the start of every RSNA run (the probe was run with the earlier 75 / 12 / 13 rule: 20 005 / 3 127 / 3 552) |
 | Boxes | 9 555; one box 2 614 patients, two 3 266, three 119, four 13 |
 | Box short side | median 208 px (5 % under 109 px) |
 | Box long side | median 304 px |

@@ -299,7 +299,7 @@ def probe_ddr():
 # ============================================================ RSNA
 def split_of(pid):
     h = int(hashlib.md5((str(pid) + str(SPLIT_SEED)).encode()).hexdigest(), 16) % 100
-    return 'train' if h >= 25 else ('val' if h < 12 else 'test')
+    return 'train' if h >= 30 else ('val' if h < 15 else 'test')
 
 
 def probe_rsna():
