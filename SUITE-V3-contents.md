@@ -11,7 +11,8 @@ below is something the code does; section 9 lists what it does not do.
 | RSNA, pneumonia yes / no | about 18 700 | about 4 000 | about 4 000 (70 / 15 / 15 by patient) |
 
 - DDR images are cropped to the retina (square pixels, no black margin), then
-  resized to 896 px. RSNA images are used at 1024 px.
+  resized to 896 px (1792 px for `hires`). RSNA images are used at 1024 px.
+- Decoded images are cached once on disk and shared by all jobs.
 - The split never depends on the seed.
 - Annotations, used only for analysis, never for training: DDR lesion masks
   (four types) on 185 test and 143 validation images; RSNA opacity boxes on
@@ -48,7 +49,7 @@ warm-up then cosine decay, weight decay 0.1, 50 epochs, batch 16, M = 10 and
 128 candidates scored at a time unless stated. Every model uses at most two
 patch sizes.
 
-## 3. The 74 configurations
+## 3. The 136 configurations
 
 ### core (22): the main table, three seeds
 
@@ -60,24 +61,37 @@ patch sizes.
 | MS-IPS 128/64, 64/32 | MS-IPS 256/128, 128/64 |
 | H-MS-IPS 224 then 112, 224 then 56 | H-MS-IPS 256 then 128, 256 then 64 |
 
-### ablation (8)
+### ablation (36): the selection module, on every selector
 
-| DDR | RSNA |
+Each of the 16 selectors of `core` (IPS, MS-IPS and H-MS-IPS, both data
+sets) is trained twice more:
+
+| Variant | Applied to |
 |---|---|
-| IPS 128 self-attention, IPS 128 random selection | same |
-| H-MS-IPS 224/112 and 224/56, coarse zones trained | H-MS-IPS 256/128 and 256/64, coarse zones trained |
+| self-attention aggregator (`_sa`) | DDR: IPS 128, 112, 64, 56, 32; MS-IPS 128/64, 64/32; H-MS-IPS 224/112, 224/56. RSNA: IPS 256, 128, 64; MS-IPS 256/128, 128/64; H-MS-IPS 256/128, 256/64 |
+| random selection (`_rand`) | the same 16 |
+| coarse zones trained (`_tc`) | the 4 H-MS-IPS of `core` |
 
-### mstudy (20): values of M
+The cross-attention version is the `core` run itself.
 
-| | Values |
+### mstudy (54): values of M, on the three families
+
+| | Values of M (10 is the `core` run) |
 |---|---|
-| DDR, IPS 128 | M = 2, 5, 10, 20, 40 |
-| DDR, IPS 64 | M = 10, 20, 40 |
-| DDR, IPS 32 | M = 10, 40, 80, 160 |
-| DDR, H-MS-IPS 224/56 | M = 10, 20, 40; zones kept 2, 4, 8 |
-| RSNA, IPS 128 | M = 2, 5, 10, 20, 40 |
-| RSNA, IPS 64 | M = 10, 20, 40 |
-| RSNA, H-MS-IPS 256/64 | M = 10, 40 |
+| DDR, IPS 128 | 2, 5, 20, 40 |
+| DDR, IPS 64 | 2, 5, 20, 40 |
+| DDR, IPS 32 | 2, 5, 20, 40, 80, 160 |
+| DDR, MS-IPS 128/64 | 2, 5, 20, 40 |
+| DDR, MS-IPS 64/32 | 2, 5, 20, 40 |
+| DDR, H-MS-IPS 224/112 | 2, 5 (16 candidates at most) |
+| DDR, H-MS-IPS 224/56 | 2, 5, 20, 40; and 2 or 8 zones kept instead of 4 |
+| RSNA, IPS 256 | 2, 5 (16 candidates) |
+| RSNA, IPS 128 | 2, 5, 20, 40 |
+| RSNA, IPS 64 | 2, 5, 20, 40 |
+| RSNA, MS-IPS 256/128 | 2, 5, 20, 40 |
+| RSNA, MS-IPS 128/64 | 2, 5, 20, 40 |
+| RSNA, H-MS-IPS 256/128 | 2, 5 (16 candidates at most) |
+| RSNA, H-MS-IPS 256/64 | 2, 5, 20, 40 |
 
 Several of these train on the same number of pixels (M × patch²), for
 example 10 × 128 = 40 × 64 = 160 × 32 on DDR.
@@ -152,6 +166,10 @@ example 10 × 128 = 40 × 64 = 160 × 32 on DDR.
 
 ### 4.5 Interpretability
 
+All the analyses below use the very patches that produced the test score:
+the lesion study, Grad-CAM and the top-M row of the selection study do not
+draw a new selection.
+
 **What the selection is worth** (selectors trained with attention, on test):
 the same weights evaluated with
 1. patches drawn at random,
@@ -171,6 +189,17 @@ lesion type and all together:
 - share of the lesion inside the selected patches
 - share of the image covered by the selected patches
 - for H-MS-IPS: share of the lesion inside the kept zones, and share of images where the zones miss the lesion entirely
+
+**Grad-CAM** (every model, test split): the map of the class explained
+(pneumonia on RSNA, the predicted grade on DDR), from the last residual stage
+of the ResNet-18: over the whole image for the baseline, inside every patch
+for MIL, inside every selected patch for the selectors (zero elsewhere, so
+the map shows both where the model looked and what it used inside). On the
+annotated images, for each lesion type:
+- share of the map's mass on the lesion, and that share divided by the
+  lesion's share of the image (1 = no better than a uniform map)
+- pointing game: the maximum of the map lies within 15 px of a lesion
+- pixel AUROC: the map used as a pixel-wise lesion detector
 
 **Which sizes are chosen**: how many of the selected patches are of each size.
 
@@ -197,6 +226,8 @@ important patch.
 | `experiments/<run>_result.json` | configuration, costs, every metric of section 4, history of all epochs |
 | `experiments/<run>_lesions_test.csv`, `_val.csv` | lesion results per image |
 | `predictions/<run>_test.npz`, `_val.npz` | section 4.6 |
+| `predictions/<run>_gradcam_test.npz` | Grad-CAM of every test image (112 × 112) and the class explained |
+| `experiments/<run>_gradcam_test.csv` | Grad-CAM lesion results per annotated image |
 | `history/codecarbon/<run>/` | energy log |
 
 ## 5. Runs without training
@@ -211,7 +242,9 @@ important patch.
 
 - `runs.csv`: one row per run with the main numbers
 - `configs.csv`: mean and standard deviation over seeds
-- `pairs.csv`: 32 paired comparisons on the same test images, with a
+- `pairs.csv`: 32 hand-picked paired comparisons, plus every ablation
+  against the model it was derived from (`_sa`, `_rand`, `_tc`, each value
+  of M against M = 10), on the same test images, with a
   bootstrap interval for the difference (cascade against IPS at the same
   final patch, MS-IPS against each of its two sizes, IPS against the
   half-resolution image and against MIL, cross-attention against
@@ -227,14 +260,15 @@ important patch.
 | Does mixing two sizes help? | MS-IPS against its two sizes | score, sizes chosen, value of choosing sizes |
 | Is selection better than shrinking the image? | IPS against the half-resolution image | score at similar memory |
 | What does selection save against using every patch? | IPS against MIL | score, memory, GFLOPs |
-| Which selection module? | cross-attention, self-attention, random | score, lesion hits |
+| Which selection module? | cross-attention, self-attention, random, on all 16 selectors | score, lesion hits, Grad-CAM |
 | Does training the coarse stage help? | `_tc` against without | score, share of the lesion kept by the zones |
-| How many patches are needed? | mstudy | score and memory against M |
+| How many patches are needed, for each family? | mstudy | score and memory against M |
 | Few large or many small patches? | equal M × patch² | score at equal memory |
 | Does more resolution help? | hires | score at the same memory |
 | Which patch size for which lesion size? | patch sizes 28 to 256 on two data sets | score, lesion hits |
 | Does it hold with little data? | lowdata | score |
 | Do the patches fall on lesions? | all except the baseline | lesion study |
+| Do the models look at the lesions? | all, baseline included | Grad-CAM energy, pointing game, pixel AUROC |
 | Is the cost known in advance? | bench and every run | predicted against measured memory |
 | Are the models calibrated? | all | ECE, Brier |
 | Is a difference real? | core with three seeds | standard deviation, paired bootstrap |
@@ -250,11 +284,14 @@ important patch.
 
 - **No figures.** Heatmaps and qualitative examples are drawn from the saved
   files (section 4.6) by a script still to write; no rerun is needed.
-- **No heatmap** for the self-attention and random-selection models (their
-  scores depend on the other patches of the group), nor for the baseline.
-  No Grad-CAM.
-- **Lesion analysis only on annotated images**: 185 DDR and about 950 RSNA
-  test images.
+- **No attention heatmap** for the self-attention and random-selection
+  models (their scores depend on the other patches of the group) nor for the
+  baseline. Grad-CAM covers every model, these included.
+- **Lesion analysis and Grad-CAM metrics only on annotated images**: 185 DDR
+  and about 950 RSNA test images (the Grad-CAM maps themselves are saved for
+  every test image).
+- **Grad-CAM of a selector is zero outside its selected patches** by
+  construction; compare it with the baseline knowing that.
 - **One seed** outside `core`, unless more are launched.
 - **One backbone** (ResNet-18), one training recipe, no hyperparameter search.
 - **No external data set.**
@@ -264,4 +301,5 @@ important patch.
 - **Memory and time are those of the cluster GPU.**
 - **The training-set metrics are computed with augmentation on**, so they
   slightly understate the fit.
-- **DDR at 1792 px is not cached**: those four runs read images from disk.
+- **DDR at 1792 px is cached as JPEG** (quality 95, no chroma subsampling,
+  about 15 GB) instead of raw (about 120 GB). The 896 px cache is raw.

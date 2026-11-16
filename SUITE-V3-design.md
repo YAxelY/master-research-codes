@@ -33,9 +33,12 @@ sentence of it should be pasted into the paper. See section 10.
 >   256 px (about one opacity) is in `core`, with MS-IPS 256/128.
 > - **New baseline**: attention MIL (Ilse et al., 2018) over all patches of
 >   128 px, every patch trained, no selection.
-> - **New ablation group** (`ablation`): self-attention aggregator, random
->   selection trained end to end, coarse zones of the cascade trained.
-> - **M study**: M from 2 to 160, unchanged.
+> - **New ablation group** (`ablation`): self-attention aggregator and random
+>   selection on all 16 selectors of `core` (IPS, MS-IPS, H-MS-IPS), coarse
+>   zones of the cascades trained.
+> - **M study** on the three families, both data sets, M from 2 to 160.
+> - **Grad-CAM** for every model on the test split, with lesion metrics.
+> - **DDR at 1792 px is cached** (JPEG, quality 95).
 > - **Recorded in addition**: kappa linear, per-grade metrics, referable DR
 >   (grade ≥ 2) AUC, sensitivity and specificity, calibration (ECE, Brier,
 >   NLL), confusion matrices, 95 % bootstrap intervals on test, parameters
@@ -45,8 +48,9 @@ sentence of it should be pasted into the paper. See section 10.
 > - **Launch**: `bash submit-v3.sh <group> <seed>` submits one job per
 >   configuration; a configuration already running in another job is skipped.
 >
-> Group sizes: core 22, ablation 8, mstudy 20, patch 6, base 2, ms 2,
-> lowres 2, hires 4, lowdata 6, misc 2 (74 configurations).
+> Group sizes: core 22, ablation 36, mstudy 54, patch 6, base 2, ms 2,
+> lowres 2, hires 4, lowdata 6, misc 2 (136 configurations). The complete
+> list of what is measured is `SUITE-V3-contents.md`.
 
 ## 1. The question, in one sentence
 

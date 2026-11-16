@@ -13,8 +13,8 @@
 #  submits one job per configuration of a group:
 #
 #    bash submit-v3.sh core 42        # 22 jobs
-#    bash submit-v3.sh ablation 42    #  8 jobs
-#    bash submit-v3.sh mstudy 42      # 20 jobs
+#    bash submit-v3.sh ablation 42    # 36 jobs
+#    bash submit-v3.sh mstudy 42      # 54 jobs
 #
 #  Without training (minutes):
 #    IPS_MODE=bench   sbatch -J v3_bench  run-ips-suite-v3.sh
@@ -27,7 +27,8 @@
 #  resubmitting the same command is always safe.
 #
 #  The first DDR job writes the decoded-image cache (about 33 GB for the three
-#  splits, a few minutes); the others wait for it and reuse it.
+#  splits at 896 px, about 15 GB more at 1792 px); the others wait for it and
+#  reuse it.
 #
 #  Outputs, under ips-project/results/ips-suite-v3/ :
 #      checkpoints/   <run>_weights.pt  (best epoch on validation)

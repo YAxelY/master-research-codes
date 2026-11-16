@@ -15,7 +15,7 @@ Writes into RESULTS_DIR/aggregate/ :
 Units: memory in GB = MB / 1000. Scores are TEST scores at the epoch chosen
 on validation, unless a column says `val`.
 """
-import sys, json, argparse
+import sys, re, json, argparse
 from pathlib import Path
 
 import numpy as np
@@ -144,6 +144,11 @@ def main():
             test_auc_referable=r['test'].get('auc_referable'),
             test_auc_macro=r['test'].get('auc_macro_ovr'),
             attn_top1_share=r['test'].get('attn_top1_share'))
+        gc = r.get('gradcam_test', {})
+        G = gc.get('any') or gc.get('opacity')
+        if G:
+            row.update(gc_energy_ratio=G['energy_ratio'], gc_pointing=G['pointing_game'],
+                       gc_auroc=G['pixel_auroc'], gc_n=G['n_img'])
         if 'test_at_val_threshold' in r:
             m = r['test_at_val_threshold']
             row.update(test_sens=m['recall'], test_spec=m['specificity'],
@@ -188,8 +193,22 @@ def main():
             conf[c + '_sd'] = g[c].std(ddof=1)
     conf.reset_index().to_csv(out / 'configs.csv', index=False)
 
+    # every ablation is also compared with the model it was derived from
+    cfgs = set(runs.config)
+    auto = []
+    for c in sorted(cfgs):
+        for suf, why in (('_sa', 'self-attention against cross-attention'),
+                         ('_rand', 'random against learned selection'),
+                         ('_tc', 'coarse zones trained against not')):
+            if c.endswith(suf) and c[:-len(suf)] in cfgs:
+                auto.append((c, c[:-len(suf)], why))
+        mm = re.match(r'(.+)_m(\d+)$', c)
+        if mm and mm.group(1) in cfgs:
+            auto.append((c, mm.group(1), f'M = {mm.group(2)} against M = 10'))
+    have = {frozenset((x, y)) for x, y, _ in PAIRS}
+    all_pairs = PAIRS + [t for t in auto if frozenset(t[:2]) not in have]
     prow = []
-    for x, y, why in PAIRS:
+    for x, y, why in all_pairs:
         for seed in sorted(set(runs[runs.config == x].seed) & set(runs[runs.config == y].seed)):
             px, py = load_pred(pred, f"{x}_s{seed}"), load_pred(pred, f"{y}_s{seed}")
             if px is None or py is None or len(px[0]) != len(py[0]):
@@ -217,7 +236,8 @@ def main():
                les_test_x='{:.2f}', les_test_zone_cover='{:.2f}', gain_positions='{:+.3f}',
                gain_scales='{:+.3f}', train_model_h='{:.1f}', train_data_h='{:.1f}',
                diff='{:+.4f}', ci_lo='{:+.4f}', ci_hi='{:+.4f}', train_loss_best=f3,
-               gflops_infer='{:.1f}', params_m='{:.1f}')
+               gflops_infer='{:.1f}', params_m='{:.1f}', gc_energy_ratio='{:.2f}',
+               gc_pointing='{:.2f}', gc_auroc='{:.3f}')
     cr = conf.reset_index()
     txt = "# ips-suite-v3 : aggregate\n\nTest scores at the epoch chosen on validation. " \
           "Memory in GB (MB / 1000). `_sd` is the standard deviation over seeds.\n"
@@ -228,10 +248,11 @@ def main():
                 'val_minus_test', 'peak_gb', 'peak_select_gb', 'peak_step_gb',
                 'infer_peak_gb', 'infer_ms_img', 'gflops_infer', 'params_m',
                 'train_model_h', 'train_data_h'], fmt)
-        txt += f"\n## {ds.upper()} : what the selection does\n\n" + md(
-            d[d.model != 'baseline'],
+        txt += f"\n## {ds.upper()} : what the selection does, and Grad-CAM\n\n" + md(
+            d,
             ['config', 'gain_scales', 'gain_positions', 'les_test_n', 'les_test_x',
-             'les_test_zone_cover', 'train_loss_best'], fmt)
+             'les_test_zone_cover', 'gc_energy_ratio', 'gc_pointing', 'gc_auroc',
+             'train_loss_best'], fmt)
     if len(pairs):
         pm = pairs.groupby(['a', 'b', 'question'], sort=False).agg(
             seeds=('seed', 'size'), diff=('diff', 'mean'), ci_lo=('ci_lo', 'min'),
