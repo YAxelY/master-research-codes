@@ -279,7 +279,7 @@ export IPS_CACHE="${IPS_CACHE:-ddr}"
 export IPS_WORKERS="${IPS_WORKERS:-12}"
 export IPS_V2_CKPT="${IPS_V2_CKPT:-$(pwd)/results/ips-suite/checkpoints}"
 export IPS_FORCE="${IPS_FORCE:-0}"
-export IPS_DDR_GEOMETRY="${IPS_DDR_GEOMETRY:-stretch}"   # stretch (v2) | retina | crop
+export IPS_DDR_GEOMETRY="${IPS_DDR_GEOMETRY:-retina}"    # retina | stretch (v2 input) | crop
 
 echo "[ENV] mode=$IPS_MODE runs=$IPS_RUNS seeds=$IPS_SEEDS workers=$IPS_WORKERS cache=$IPS_CACHE_DIR"
 
