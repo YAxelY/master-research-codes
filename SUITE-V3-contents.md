@@ -13,6 +13,8 @@ below is something the code does; section 9 lists what it does not do.
 - DDR images are cropped to the retina (square pixels, no black margin), then
   resized to 896 px (1792 px for `hires`). RSNA images are used at 1024 px.
 - Decoded images are cached once on disk and shared by all jobs.
+- DDR training images are augmented on the GPU (flips, rotation up to 15°,
+  colour jitter), drawn independently for each image.
 - The split never depends on the seed.
 - Annotations, used only for analysis, never for training: DDR lesion masks
   (four types) on 185 test and 143 validation images; RSNA opacity boxes on
@@ -124,7 +126,7 @@ example 10 × 128 = 40 × 64 = 160 × 32 on DDR.
 
 - every metric of 4.3 (on training images these are computed with augmentation on)
 - loss and learning rate
-- time spent reading images, selecting patches, and in the training step
+- time spent reading images, augmenting them (on the GPU, DDR), selecting patches, and in the training step
 - peak GPU memory of the selection and of the training step
 
 ### 4.3 With the weights of the best epoch, on validation and test
@@ -159,7 +161,7 @@ example 10 × 128 = 40 × 64 = 160 × 32 on DDR.
 ### 4.4 Efficiency
 
 - peak GPU memory: training (whole, selection, training step), validation, test
-- training time: reading, selection, training step, and model time per image
+- training time: reading, augmentation, selection, training step, and model time per image
 - inference: time per image (selection, classification, total) and images per second
 - energy (kWh) and CO₂ (codecarbon, on the cluster)
 - GPU name
