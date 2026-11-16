@@ -22,6 +22,32 @@ design choice below has to be examined, changed where you disagree, and
 owned by the authors before any of it reaches a submission, and no
 sentence of it should be pasted into the paper. See section 10.
 
+> **Update, 16 November 2026** (supervisor's decisions of 15 and 16 November).
+> This section supersedes the run lists further down; the notebook
+> (`IPS_MODE=list`) and `submit-v3.sh` are the reference.
+>
+> - **Two patch sizes at most** per model: the three-stage cascade is removed.
+> - **IPS at 32 and 64 px on DDR** are in the main group (`core`), with MS-IPS
+>   64/32 so that it can be compared with its two single-size parts.
+> - **RSNA**: opacity boxes measure 209 ± 63 by 339 ± 149 px, so IPS at
+>   256 px (about one opacity) is in `core`, with MS-IPS 256/128.
+> - **New baseline**: attention MIL (Ilse et al., 2018) over all patches of
+>   128 px, every patch trained, no selection.
+> - **New ablation group** (`ablation`): self-attention aggregator, random
+>   selection trained end to end, coarse zones of the cascade trained.
+> - **M study**: M from 2 to 160, unchanged.
+> - **Recorded in addition**: kappa linear, per-grade metrics, referable DR
+>   (grade ≥ 2) AUC, sensitivity and specificity, calibration (ECE, Brier,
+>   NLL), confusion matrices, 95 % bootstrap intervals on test, parameters
+>   and GFLOPs per image, the weight of each selected patch in the decision,
+>   the coarse zones of the cascades, and on the test split a score for every
+>   candidate patch (heatmaps without rerunning).
+> - **Launch**: `bash submit-v3.sh <group> <seed>` submits one job per
+>   configuration; a configuration already running in another job is skipped.
+>
+> Group sizes: core 22, ablation 8, mstudy 20, patch 6, base 2, ms 2,
+> lowres 2, hires 4, lowdata 6, misc 2 (74 configurations).
+
 ## 1. The question, in one sentence
 
 > With a fixed number of pixels that the network is allowed to train on,

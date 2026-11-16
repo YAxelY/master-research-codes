@@ -5,36 +5,23 @@
 #  Needs this script, the notebook and kaggle.json in the same folder.
 #
 #  The argument is a list of run names and/or GROUP names, comma separated.
-#  Groups: core, hires, patch, mstudy, base, ms, lowres, lowdata, misc, all.
+#  Groups: core, ablation, mstudy, patch, base, ms, lowres, hires, lowdata,
+#  misc, all. Every model uses at most two patch sizes.
 #  The full list with exact costs:  IPS_MODE=list bash run-ips-suite-v3.sh
 #
-#  ONE CONFIGURATION PER JOB is the fastest. Examples:
+#  ONE CONFIGURATION PER JOB is the fastest: use submit-v3.sh, which
+#  submits one job per configuration of a group:
 #
-#    # 0. no training: memory / latency benchmark, then re-score the v2 weights
+#    bash submit-v3.sh core 42        # 22 jobs
+#    bash submit-v3.sh ablation 42    #  8 jobs
+#    bash submit-v3.sh mstudy 42      # 20 jobs
+#
+#  Without training (minutes):
 #    IPS_MODE=bench   sbatch -J v3_bench  run-ips-suite-v3.sh
-#    IPS_MODE=eval_v2 IPS_V2_CKPT=$HOME/ips-project/results/ips-suite/checkpoints \
-#                     sbatch -J v3_evalv2 run-ips-suite-v3.sh
+#    IPS_MODE=eval_v2 sbatch -J v3_evalv2 run-ips-suite-v3.sh
 #
-#    # 1. dry run of one configuration, one epoch
-#    IPS_EPOCHS=1 sbatch -J v3_try run-ips-suite-v3.sh ddr_ips56
-#
-#    # 2. the core group, three seeds, one job per configuration and seed
-#    for s in 42 43 44; do
-#      for r in ddr_base896 ddr_base448 ddr_ips128 ddr_ips112 ddr_ips56 \
-#               ddr_h224_112 ddr_h224_56 ddr_h224_112_tc ddr_h224_56_tc \
-#               rsna_base1024 rsna_base512 rsna_ips128 rsna_ips64 \
-#               rsna_h256_128 rsna_h256_64 rsna_h256_128_tc rsna_h256_64_tc; do
-#        IPS_SEEDS=$s sbatch -J v3_${r}_s$s run-ips-suite-v3.sh $r
-#      done
-#    done
-#
-#    # 2b. DDR at 1792 px (no cache: it would take about 120 GB)
-#    for r in ddr_r1792_ips128 ddr_r1792_ips128_m20 ddr_r1792_ips112 ddr_r1792_h448_112; do
-#      IPS_CACHE=none sbatch -J v3_$r run-ips-suite-v3.sh $r
-#    done
-#
-#    # 3. a whole group in one job, sequentially
-#    IPS_SEEDS=42 sbatch -J v3_mstudy run-ips-suite-v3.sh mstudy
+#  Dry run, one epoch:
+#    IPS_EPOCHS=1 sbatch -J v3_try run-ips-suite-v3.sh ddr_ips64
 #
 #  A finished run is skipped, an interrupted run resumes at its last epoch:
 #  resubmitting the same command is always safe.
@@ -44,7 +31,7 @@
 #
 #  Outputs, under ips-project/results/ips-suite-v3/ :
 #      checkpoints/   <run>_weights.pt  (best epoch on validation)
-#      experiments/   <run>_result.json, <run>_lesions.csv, bench.csv
+#      experiments/   <run>_result.json, <run>_lesions_{test,val}.csv, bench.csv
 #      predictions/   <run>_val.npz, <run>_test.npz  (per image)
 #      history/       codecarbon/<run>/
 #  Then:  python aggregate-ips-suite-v3.py ips-project/results/ips-suite-v3

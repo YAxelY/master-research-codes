@@ -24,32 +24,43 @@ from sklearn.metrics import cohen_kappa_score, roc_auc_score
 
 # (a, b, question): the difference reported is a - b
 PAIRS = [
-    ('ddr_h224_112', 'ddr_ips112', 'coarse stage, same final patch'),
-    ('ddr_h224_56', 'ddr_ips56', 'coarse stage, same final patch'),
-    ('ddr_h224_28', 'ddr_ips28', 'coarse stage, same final patch'),
-    ('ddr_h224_112_tc', 'ddr_h224_112', 'gradients to the coarse stage'),
-    ('ddr_h224_56_tc', 'ddr_h224_56', 'gradients to the coarse stage'),
-    ('ddr_h224_28_tc', 'ddr_h224_28', 'gradients to the coarse stage'),
-    ('ddr_h224_56_tc', 'ddr_ips56', 'trained cascade against IPS, same final patch'),
-    ('ddr_h224lr_56_tc', 'ddr_ips64', 'low-resolution cascade against IPS'),
+    # coarse stage, at the same final patch size
+    ('ddr_h224_112', 'ddr_ips112', 'cascade against IPS, same final patch'),
+    ('ddr_h224_56', 'ddr_ips56', 'cascade against IPS, same final patch'),
+    ('ddr_h224_28', 'ddr_ips28', 'cascade against IPS, same final patch'),
+    ('rsna_h256_128', 'rsna_ips128', 'cascade against IPS, same final patch'),
+    ('rsna_h256_64', 'rsna_ips64', 'cascade against IPS, same final patch'),
+    ('rsna_h256_32', 'rsna_ips32', 'cascade against IPS, same final patch'),
+    # flat multi-scale against its two single-size parts
+    ('ddr_ms128_64', 'ddr_ips128', 'MS-IPS against IPS at its larger size'),
+    ('ddr_ms128_64', 'ddr_ips64', 'MS-IPS against IPS at its smaller size'),
+    ('ddr_ms64_32', 'ddr_ips64', 'MS-IPS against IPS at its larger size'),
+    ('ddr_ms64_32', 'ddr_ips32', 'MS-IPS against IPS at its smaller size'),
+    ('rsna_ms256_128', 'rsna_ips256', 'MS-IPS against IPS at its larger size'),
+    ('rsna_ms256_128', 'rsna_ips128', 'MS-IPS against IPS at its smaller size'),
+    ('rsna_ms128_64', 'rsna_ips128', 'MS-IPS against IPS at its larger size'),
+    ('rsna_ms128_64', 'rsna_ips64', 'MS-IPS against IPS at its smaller size'),
+    # baselines
     ('ddr_ips128', 'ddr_base448', 'IPS against the image at half resolution'),
+    ('ddr_ips128', 'ddr_mil128', 'IPS against attention MIL on all patches'),
+    ('rsna_ips128', 'rsna_base512', 'IPS against the image at half resolution'),
+    ('rsna_ips128', 'rsna_mil128', 'IPS against attention MIL on all patches'),
+    # ablation of the selection module
+    ('ddr_ips128', 'ddr_ips128_sa', 'cross-attention against self-attention'),
+    ('ddr_ips128', 'ddr_ips128_rand', 'learned against random selection'),
+    ('rsna_ips128', 'rsna_ips128_sa', 'cross-attention against self-attention'),
+    ('rsna_ips128', 'rsna_ips128_rand', 'learned against random selection'),
+    ('ddr_h224_112_tc', 'ddr_h224_112', 'coarse zones trained or not'),
+    ('ddr_h224_56_tc', 'ddr_h224_56', 'coarse zones trained or not'),
+    ('rsna_h256_128_tc', 'rsna_h256_128', 'coarse zones trained or not'),
+    ('rsna_h256_64_tc', 'rsna_h256_64', 'coarse zones trained or not'),
+    # equal trained pixels, resolution, resampling
     ('ddr_ips64_m40', 'ddr_ips128', 'equal pixels: 40 x 64 against 10 x 128'),
     ('ddr_ips32_m160', 'ddr_ips128', 'equal pixels: 160 x 32 against 10 x 128'),
-    ('ddr_ms128_64', 'ddr_ips128', 'flat multi-scale against IPS'),
-    ('ddr_ms128_64_rs', 'ddr_ms128_64', 'resampled against native'),
+    ('rsna_ips64_m40', 'rsna_ips128', 'equal pixels: 40 x 64 against 10 x 128'),
     ('ddr_r1792_ips128', 'ddr_ips128', 'twice the resolution, same memory'),
     ('ddr_r1792_ips128', 'ddr_base896', 'IPS at 1792 px against the full image at 896 px'),
-    ('ddr_r1792_h448_112', 'ddr_r1792_ips112', 'coarse stage, same final patch, 1792 px'),
-    ('rsna_h256_128', 'rsna_ips128', 'coarse stage, same final patch'),
-    ('rsna_h256_64', 'rsna_ips64', 'coarse stage, same final patch'),
-    ('rsna_h256_32', 'rsna_ips32', 'coarse stage, same final patch'),
-    ('rsna_h256_128_tc', 'rsna_h256_128', 'gradients to the coarse stage'),
-    ('rsna_h256_64_tc', 'rsna_h256_64', 'gradients to the coarse stage'),
-    ('rsna_h256_64_tc', 'rsna_ips64', 'trained cascade against IPS, same final patch'),
-    ('rsna_ips128', 'rsna_base512', 'IPS against the image at half resolution'),
-    ('rsna_ips64_m40', 'rsna_ips128', 'equal pixels: 40 x 64 against 10 x 128'),
-    ('rsna_ms128_64', 'rsna_ips128', 'flat multi-scale against IPS'),
-    ('rsna_ms128_64_rs', 'rsna_ms128_64', 'resampled against native'),
+    ('ddr_ms128_64_rs', 'ddr_ms128_64', 'resampled against native'),
 ]
 
 
@@ -124,7 +135,15 @@ def main():
             train_model_ms_img=t['train_model_ms_per_img'],
             train_data_h=t['train_t_data_s'] / 3600,
             train_model_h=(t['train_t_select_s'] + t['train_t_step_s']) / 3600,
-            co2_kg=t['total_co2_kg'])
+            co2_kg=t['total_co2_kg'],
+            params_m=k.get('params', np.nan) / 1e6,
+            gflops_infer=k.get('gflops_infer'), gflops_select=k.get('gflops_select'),
+            gflops_classify=k.get('gflops_classify'),
+            test_ece=r['test'].get('ece'), test_brier=r['test'].get('brier'),
+            test_kappa_linear=r['test'].get('kappa_linear'),
+            test_auc_referable=r['test'].get('auc_referable'),
+            test_auc_macro=r['test'].get('auc_macro_ovr'),
+            attn_top1_share=r['test'].get('attn_top1_share'))
         if 'test_at_val_threshold' in r:
             m = r['test_at_val_threshold']
             row.update(test_sens=m['recall'], test_spec=m['specificity'],
@@ -164,7 +183,8 @@ def main():
     conf['n_seeds'] = g.size()
     for c in num:
         conf[c] = g[c].mean()
-        if c in ('test', 'val', 'peak_gb', 'les_test_x', 'gain_positions'):
+        if c in ('test', 'val', 'peak_gb', 'les_test_x', 'gain_positions',
+                 'test_auc_referable', 'test_ece'):
             conf[c + '_sd'] = g[c].std(ddof=1)
     conf.reset_index().to_csv(out / 'configs.csv', index=False)
 
@@ -196,7 +216,8 @@ def main():
                infer_ms_img='{:.1f}', train_px='{:.0f}', explore_x_img='{:.2f}',
                les_test_x='{:.2f}', les_test_zone_cover='{:.2f}', gain_positions='{:+.3f}',
                gain_scales='{:+.3f}', train_model_h='{:.1f}', train_data_h='{:.1f}',
-               diff='{:+.4f}', ci_lo='{:+.4f}', ci_hi='{:+.4f}', train_loss_best=f3)
+               diff='{:+.4f}', ci_lo='{:+.4f}', ci_hi='{:+.4f}', train_loss_best=f3,
+               gflops_infer='{:.1f}', params_m='{:.1f}')
     cr = conf.reset_index()
     txt = "# ips-suite-v3 : aggregate\n\nTest scores at the epoch chosen on validation. " \
           "Memory in GB (MB / 1000). `_sd` is the standard deviation over seeds.\n"
@@ -205,7 +226,8 @@ def main():
         txt += f"\n## {ds.upper()} : score and cost\n\n" + md(
             d, ['config', 'n_seeds', 'M', 'candidates', 'train_px', 'test', 'test_sd', 'val',
                 'val_minus_test', 'peak_gb', 'peak_select_gb', 'peak_step_gb',
-                'infer_peak_gb', 'infer_ms_img', 'train_model_h', 'train_data_h'], fmt)
+                'infer_peak_gb', 'infer_ms_img', 'gflops_infer', 'params_m',
+                'train_model_h', 'train_data_h'], fmt)
         txt += f"\n## {ds.upper()} : what the selection does\n\n" + md(
             d[d.model != 'baseline'],
             ['config', 'gain_scales', 'gain_positions', 'les_test_n', 'les_test_x',
