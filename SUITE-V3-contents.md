@@ -51,25 +51,25 @@ warm-up then cosine decay, weight decay 0.1, 50 epochs, batch 16, M = 10 and
 128 candidates scored at a time unless stated. Every model uses at most two
 patch sizes.
 
-## 3. The 139 configurations
+## 3. The 166 configurations
 
-### focus (12): the selection of 17 November, launched first
+### focus (13): the selection of 17 November, launched first
 
 | DDR (896 px) | RSNA (1024 px) |
 |---|---|
-| full image 896, MIL 128 | full image 1024, MIL 128 |
+| full image 896, MIL 128 | full image 1024, MIL 128, MIL 256 |
 | IPS 64, IPS 32 | IPS 256, IPS 128 |
 | MS-IPS 64/32 | MS-IPS 256/128 |
 | H-MS-IPS 64 then 32 (keeps 49 of 196 zones, a quarter of the image) | H-MS-IPS 256 then 128 |
 
-These 12 are also part of `core`.
+These 13 are also part of `core`.
 
-### core (23): the main table, three seeds
+### core (24): the main table, three seeds
 
 | DDR (896 px) | RSNA (1024 px) |
 |---|---|
 | full image 896, full image 448 | full image 1024, full image 512 |
-| MIL 128 | MIL 128 |
+| MIL 128 | MIL 128, MIL 256 |
 | IPS 128, 112, 64, 56, 32 | IPS 256, 128, 64 |
 | MS-IPS 128/64, 64/32 | MS-IPS 256/128, 128/64 |
 | H-MS-IPS 224 then 112, 224 then 56, 64 then 32 | H-MS-IPS 256 then 128, 256 then 64 |
@@ -87,27 +87,22 @@ sets) is trained twice more:
 
 The cross-attention version is the `core` run itself.
 
-### mstudy (54): values of M, on the three families
+### mstudy (80): values of M, on every selector
 
-| | Values of M (10 is the `core` run) |
-|---|---|
-| DDR, IPS 128 | 2, 5, 20, 40 |
-| DDR, IPS 64 | 2, 5, 20, 40 |
-| DDR, IPS 32 | 2, 5, 20, 40, 80, 160 |
-| DDR, MS-IPS 128/64 | 2, 5, 20, 40 |
-| DDR, MS-IPS 64/32 | 2, 5, 20, 40 |
-| DDR, H-MS-IPS 224/112 | 2, 5 (16 candidates at most) |
-| DDR, H-MS-IPS 224/56 | 2, 5, 20, 40; and 2 or 8 zones kept instead of 4 |
-| RSNA, IPS 256 | 2, 5 (16 candidates) |
-| RSNA, IPS 128 | 2, 5, 20, 40 |
-| RSNA, IPS 64 | 2, 5, 20, 40 |
-| RSNA, MS-IPS 256/128 | 2, 5, 20, 40 |
-| RSNA, MS-IPS 128/64 | 2, 5, 20, 40 |
-| RSNA, H-MS-IPS 256/128 | 2, 5 (16 candidates at most) |
-| RSNA, H-MS-IPS 256/64 | 2, 5, 20, 40 |
+Each of the 17 selectors of `core` is trained with every value of M among
+2, 5, 20, 40, 80 and 160 that is smaller than its pool of candidates
+(M = 10 is the `core` run itself), plus the cascade 224/56 keeping 2 or 8
+zones instead of 4.
 
-Several of these train on the same number of pixels (M × patch²), for
-example 10 × 128 = 40 × 64 = 160 × 32 on DDR.
+| Selector | Pool | Values of M |
+|---|---|---|
+| DDR IPS 128, IPS 112; RSNA IPS 128 | 49 to 64 | 2, 5, 10, 20, 40 |
+| DDR IPS 64, 56, 32; RSNA IPS 64 | 196 to 784 | 2, 5, 10, 20, 40, 80, 160 |
+| DDR MS-IPS 128/64, 64/32; RSNA MS-IPS 128/64 | 245 to 980 | 2, 5, 10, 20, 40, 80, 160 |
+| RSNA MS-IPS 256/128 | 80 | 2, 5, 10, 20, 40 |
+| DDR H-MS-IPS 64/32 | 196 | 2, 5, 10, 20, 40, 80, 160 |
+| DDR H-MS-IPS 224/56; RSNA H-MS-IPS 256/64 | 64 | 2, 5, 10, 20, 40 |
+| DDR H-MS-IPS 224/112; RSNA H-MS-IPS 256/128; RSNA IPS 256 | 16 | 2, 5, 10 |
 
 ### Other groups (24)
 
