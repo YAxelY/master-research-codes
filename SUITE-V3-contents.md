@@ -51,9 +51,20 @@ warm-up then cosine decay, weight decay 0.1, 50 epochs, batch 16, M = 10 and
 128 candidates scored at a time unless stated. Every model uses at most two
 patch sizes.
 
-## 3. The 136 configurations
+## 3. The 139 configurations
 
-### core (22): the main table, three seeds
+### focus (12): the selection of 17 November, launched first
+
+| DDR (896 px) | RSNA (1024 px) |
+|---|---|
+| full image 896, MIL 128 | full image 1024, MIL 128 |
+| IPS 64, IPS 32 | IPS 256, IPS 128 |
+| MS-IPS 64/32 | MS-IPS 256/128 |
+| H-MS-IPS 64 then 32 (keeps 49 of 196 zones, a quarter of the image) | H-MS-IPS 256 then 128 |
+
+These 12 are also part of `core`.
+
+### core (23): the main table, three seeds
 
 | DDR (896 px) | RSNA (1024 px) |
 |---|---|
@@ -61,17 +72,17 @@ patch sizes.
 | MIL 128 | MIL 128 |
 | IPS 128, 112, 64, 56, 32 | IPS 256, 128, 64 |
 | MS-IPS 128/64, 64/32 | MS-IPS 256/128, 128/64 |
-| H-MS-IPS 224 then 112, 224 then 56 | H-MS-IPS 256 then 128, 256 then 64 |
+| H-MS-IPS 224 then 112, 224 then 56, 64 then 32 | H-MS-IPS 256 then 128, 256 then 64 |
 
-### ablation (36): the selection module, on every selector
+### ablation (38): the selection module, on every selector
 
-Each of the 16 selectors of `core` (IPS, MS-IPS and H-MS-IPS, both data
+Each of the 17 selectors of `core` (IPS, MS-IPS and H-MS-IPS, both data
 sets) is trained twice more:
 
 | Variant | Applied to |
 |---|---|
-| self-attention aggregator (`_sa`) | DDR: IPS 128, 112, 64, 56, 32; MS-IPS 128/64, 64/32; H-MS-IPS 224/112, 224/56. RSNA: IPS 256, 128, 64; MS-IPS 256/128, 128/64; H-MS-IPS 256/128, 256/64 |
-| random selection (`_rand`) | the same 16 |
+| self-attention aggregator (`_sa`) | DDR: IPS 128, 112, 64, 56, 32; MS-IPS 128/64, 64/32; H-MS-IPS 224/112, 224/56, 64/32. RSNA: IPS 256, 128, 64; MS-IPS 256/128, 128/64; H-MS-IPS 256/128, 256/64 |
+| random selection (`_rand`) | the same 17 |
 | coarse zones trained (`_tc`) | the 4 H-MS-IPS of `core` |
 
 The cross-attention version is the `core` run itself.
