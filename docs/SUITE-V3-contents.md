@@ -5,10 +5,10 @@ below is something the code does; section 9 lists what it does not do.
 
 ## 1. Data
 
-| | Train | Validation (chooses the epoch) | Test (the reported score) |
-|---|---|---|---|
-| DDR, 5 grades, ungradable excluded | 6 260 | 2 503 | 3 759 (official split) |
-| RSNA, pneumonia yes / no | about 18 700 | about 4 000 | about 4 000 (70 / 15 / 15 by patient) |
+|                                    | Train        | Validation (chooses the epoch) | Test (the reported score)             |
+| ---------------------------------- | ------------ | ------------------------------ | ------------------------------------- |
+| DDR, 5 grades, ungradable excluded | 6 260        | 2 503                          | 3 759 (official split)                |
+| RSNA, pneumonia yes / no           | about 18 700 | about 4 000                    | about 4 000 (70 / 15 / 15 by patient) |
 
 - DDR images are cropped to the retina (square pixels, no black margin), then
   resized to 896 px (1792 px for `hires`). RSNA images are used at 1024 px.
@@ -22,29 +22,29 @@ below is something the code does; section 9 lists what it does not do.
 
 ## 2. The models
 
-| Model | What it does |
-|---|---|
-| Baseline | ResNet-18 on the whole image, at full or reduced resolution |
-| MIL | cuts the image into all its 128 px patches, trains on all of them, a gated attention (Ilse et al., 2018) pools them. No selection |
-| IPS | one patch size; scores every patch without gradients, keeps the best M, trains on those M only |
-| MS-IPS | two patch sizes compete for the same M places |
-| H-MS-IPS | keeps the best large zones, cuts only those into small patches, keeps the best M |
+| Model    | What it does                                                                                                                      |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Baseline | ResNet-18 on the whole image, at full or reduced resolution                                                                       |
+| MIL      | cuts the image into all its 128 px patches, trains on all of them, a gated attention (Ilse et al., 2018) pools them. No selection |
+| IPS      | one patch size; scores every patch without gradients, keeps the best M, trains on those M only                                    |
+| MS-IPS   | two patch sizes compete for the same M places                                                                                     |
+| H-MS-IPS | keeps the best large zones, cuts only those into small patches, keeps the best M                                                  |
 
 Variants used by the ablations:
 
-| Variant | Change |
-|---|---|
-| `_sa` | self-attention aggregator instead of cross-attention |
-| `_rand` | patches chosen at random, during training and testing |
-| `_tc` | the coarse zones of H-MS-IPS are also given to the classifier, so the coarse stage is trained |
-| `_m<M>` | another value of M |
-| `_k<K>` | another number of zones kept by the coarse stage |
-| `_f25` | 25 % of the training set |
-| `_rs` | small patches upsampled to the large size (resampling control) |
-| `lr` | coarse zones read at half resolution |
-| `_lazy` | image kept on the CPU, only patches sent to the GPU |
-| `_i16` | 16 candidates scored at a time instead of 128 |
-| `r1792` | DDR at 1792 px instead of 896 |
+| Variant | Change                                                                                        |
+| ------- | --------------------------------------------------------------------------------------------- |
+| `_sa`   | self-attention aggregator instead of cross-attention                                          |
+| `_rand` | patches chosen at random, during training and testing                                         |
+| `_tc`   | the coarse zones of H-MS-IPS are also given to the classifier, so the coarse stage is trained |
+| `_m<M>` | another value of M                                                                            |
+| `_k<K>` | another number of zones kept by the coarse stage                                              |
+| `_f25`  | 25 % of the training set                                                                      |
+| `_rs`   | small patches upsampled to the large size (resampling control)                                |
+| `lr`    | coarse zones read at half resolution                                                          |
+| `_lazy` | image kept on the CPU, only patches sent to the GPU                                           |
+| `_i16`  | 16 candidates scored at a time instead of 128                                                 |
+| `r1792` | DDR at 1792 px instead of 896                                                                 |
 
 Shared by all: ImageNet ResNet-18, AdamW, learning rate 10⁻⁴ with 10 epochs of
 warm-up then cosine decay, weight decay 0.1, 50 epochs, batch 16, M = 10 and
@@ -55,23 +55,23 @@ patch sizes.
 
 ### focus (14): the selection of 18 November, launched first
 
-| DDR (896 px) | RSNA (1024 px) |
-|---|---|
-| full image 896 | full image 1024 |
-| MIL 66, MIL 33 | MIL 300, MIL 150 |
-| IPS 66, IPS 33 | IPS 300, IPS 150 |
-| MS-IPS 66/33 | MS-IPS 300/150 |
+| DDR (896 px)                                | RSNA (1024 px)                              |
+| ------------------------------------------- | ------------------------------------------- |
+| full image 896                              | full image 1024                             |
+| MIL 66, MIL 33                              | MIL 300, MIL 150                            |
+| IPS 66, IPS 33                              | IPS 300, IPS 150                            |
+| MS-IPS 66/33                                | MS-IPS 300/150                              |
 | H-MS-IPS 66 then 33 (keeps 49 of 196 zones) | H-MS-IPS 300 then 150 (keeps 4 of 16 zones) |
 
 These sizes do not divide the image. The tiling gets one more row and
 column of patches, which overflow the image and are completed with black:
 
-| Size | Patches per side | Tiled width | Overflow |
-|---|---|---|---|
-| 66 px on 896 | 14 | 924 px | 28 px |
-| 33 px on 896 | 28 | 924 px | 28 px |
-| 300 px on 1024 | 4 | 1200 px | 176 px |
-| 150 px on 1024 | 7 | 1050 px | 26 px |
+| Size           | Patches per side | Tiled width | Overflow |
+| -------------- | ---------------- | ----------- | -------- |
+| 66 px on 896   | 14               | 924 px      | 28 px    |
+| 33 px on 896   | 28               | 924 px      | 28 px    |
+| 300 px on 1024 | 4                | 1200 px     | 176 px   |
+| 150 px on 1024 | 7                | 1050 px     | 26 px    |
 
 The black part is read by the encoder like the rest, so the selection cost
 of IPS 300 on RSNA is 1.37 images instead of 1.00.
@@ -91,12 +91,12 @@ kept and runnable with the same commands.
 
 ### core (24): the main table, three seeds
 
-| DDR (896 px) | RSNA (1024 px) |
-|---|---|
-| full image 896, full image 448 | full image 1024, full image 512 |
-| MIL 128 | MIL 128, MIL 256 |
-| IPS 128, 112, 64, 56, 32 | IPS 256, 128, 64 |
-| MS-IPS 128/64, 64/32 | MS-IPS 256/128, 128/64 |
+| DDR (896 px)                                   | RSNA (1024 px)                     |
+| ---------------------------------------------- | ---------------------------------- |
+| full image 896, full image 448                 | full image 1024, full image 512    |
+| MIL 128                                        | MIL 128, MIL 256                   |
+| IPS 128, 112, 64, 56, 32                       | IPS 256, 128, 64                   |
+| MS-IPS 128/64, 64/32                           | MS-IPS 256/128, 128/64             |
 | H-MS-IPS 224 then 112, 224 then 56, 64 then 32 | H-MS-IPS 256 then 128, 256 then 64 |
 
 ### ablation (38): the selection module, on every selector
@@ -104,11 +104,11 @@ kept and runnable with the same commands.
 Each of the 17 selectors of `core` (IPS, MS-IPS and H-MS-IPS, both data
 sets) is trained twice more:
 
-| Variant | Applied to |
-|---|---|
+| Variant                           | Applied to                                                                                                                                                     |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | self-attention aggregator (`_sa`) | DDR: IPS 128, 112, 64, 56, 32; MS-IPS 128/64, 64/32; H-MS-IPS 224/112, 224/56, 64/32. RSNA: IPS 256, 128, 64; MS-IPS 256/128, 128/64; H-MS-IPS 256/128, 256/64 |
-| random selection (`_rand`) | the same 17 |
-| coarse zones trained (`_tc`) | the 4 H-MS-IPS of `core` |
+| random selection (`_rand`)        | the same 17                                                                                                                                                    |
+| coarse zones trained (`_tc`)      | the 4 H-MS-IPS of `core`                                                                                                                                       |
 
 The cross-attention version is the `core` run itself.
 
@@ -119,27 +119,27 @@ Each of the 17 selectors of `core` is trained with every value of M among
 (M = 10 is the `core` run itself), plus the cascade 224/56 keeping 2 or 8
 zones instead of 4.
 
-| Selector | Pool | Values of M |
-|---|---|---|
-| DDR IPS 128, IPS 112; RSNA IPS 128 | 49 to 64 | 2, 5, 10, 20, 40 |
-| DDR IPS 64, 56, 32; RSNA IPS 64 | 196 to 784 | 2, 5, 10, 20, 40, 80, 160 |
-| DDR MS-IPS 128/64, 64/32; RSNA MS-IPS 128/64 | 245 to 980 | 2, 5, 10, 20, 40, 80, 160 |
-| RSNA MS-IPS 256/128 | 80 | 2, 5, 10, 20, 40 |
-| DDR H-MS-IPS 64/32 | 196 | 2, 5, 10, 20, 40, 80, 160 |
-| DDR H-MS-IPS 224/56; RSNA H-MS-IPS 256/64 | 64 | 2, 5, 10, 20, 40 |
-| DDR H-MS-IPS 224/112; RSNA H-MS-IPS 256/128; RSNA IPS 256 | 16 | 2, 5, 10 |
+| Selector                                                  | Pool       | Values of M               |
+| --------------------------------------------------------- | ---------- | ------------------------- |
+| DDR IPS 128, IPS 112; RSNA IPS 128                        | 49 to 64   | 2, 5, 10, 20, 40          |
+| DDR IPS 64, 56, 32; RSNA IPS 64                           | 196 to 784 | 2, 5, 10, 20, 40, 80, 160 |
+| DDR MS-IPS 128/64, 64/32; RSNA MS-IPS 128/64              | 245 to 980 | 2, 5, 10, 20, 40, 80, 160 |
+| RSNA MS-IPS 256/128                                       | 80         | 2, 5, 10, 20, 40          |
+| DDR H-MS-IPS 64/32                                        | 196        | 2, 5, 10, 20, 40, 80, 160 |
+| DDR H-MS-IPS 224/56; RSNA H-MS-IPS 256/64                 | 64         | 2, 5, 10, 20, 40          |
+| DDR H-MS-IPS 224/112; RSNA H-MS-IPS 256/128; RSNA IPS 256 | 16         | 2, 5, 10                  |
 
 ### Other groups (24)
 
-| Group | Configurations |
-|---|---|
-| patch (6) | DDR IPS 224 and 28, H-MS-IPS 224/28 with and without trained zones; RSNA IPS 32, H-MS-IPS 256/32 |
-| base (2) | full image at a quarter of the resolution, DDR and RSNA |
-| ms (2) | MS-IPS 128/64 with the 64 px patches upsampled, DDR and RSNA |
-| lowres (2) | H-MS-IPS with the coarse stage at half resolution, DDR and RSNA |
-| hires (4) | DDR at 1792 px: IPS 128 (M 10 and 20), IPS 112, H-MS-IPS 448/112 |
-| lowdata (6) | 25 % of the training set: DDR IPS 128, 64, 32 and H-MS-IPS 224/56; RSNA IPS 128, 64 |
-| misc (2) | DDR IPS 128 with lazy loading, and with 16 candidates at a time |
+| Group       | Configurations                                                                                   |
+| ----------- | ------------------------------------------------------------------------------------------------ |
+| patch (6)   | DDR IPS 224 and 28, H-MS-IPS 224/28 with and without trained zones; RSNA IPS 32, H-MS-IPS 256/32 |
+| base (2)    | full image at a quarter of the resolution, DDR and RSNA                                          |
+| ms (2)      | MS-IPS 128/64 with the 64 px patches upsampled, DDR and RSNA                                     |
+| lowres (2)  | H-MS-IPS with the coarse stage at half resolution, DDR and RSNA                                  |
+| hires (4)   | DDR at 1792 px: IPS 128 (M 10 and 20), IPS 112, H-MS-IPS 448/112                                 |
+| lowdata (6) | 25 % of the training set: DDR IPS 128, 64, 32 and H-MS-IPS 224/56; RSNA IPS 128, 64              |
+| misc (2)    | DDR IPS 128 with lazy loading, and with 16 candidates at a time                                  |
 
 ## 4. What every training run measures
 
@@ -205,6 +205,7 @@ draw a new selection.
 
 **What the selection is worth** (selectors trained with attention, on test):
 the same weights evaluated with
+
 1. patches drawn at random,
 2. random positions but the model's own mix of sizes,
 3. the model's own choice.
@@ -215,6 +216,7 @@ The difference between 1 and 2 is the value of choosing the sizes; between
 **Do the patches fall on lesions** (all models except the baseline; MIL uses
 its 10 patches of highest attention), on validation and test, for each
 lesion type and all together:
+
 - share of the selected patches that touch a lesion
 - the same share for random patches of the same size, computed exactly over all patches
 - ratio of the two (how many times better than chance)
@@ -229,6 +231,7 @@ of the ResNet-18: over the whole image for the baseline, inside every patch
 for MIL, inside every selected patch for the selectors (zero elsewhere, so
 the map shows both where the model looked and what it used inside). On the
 annotated images, for each lesion type:
+
 - share of the map's mass on the lesion, and that share divided by the
   lesion's share of the image (1 = no better than a uniform map)
 - pointing game: the maximum of the map lies within 15 px of a lesion
@@ -241,42 +244,42 @@ important patch.
 
 ### 4.6 Saved for every validation and test image
 
-| Field | Content |
-|---|---|
-| ids, paths | which image |
-| y_true, y_prob | label and predicted probabilities |
-| coords | the selected patches (size, row, column), in order of selection |
-| attn | weight of each selected patch in the final decision |
-| zones | the zones kept by the coarse stage (H-MS-IPS) |
-| score_maps | a score for every candidate patch of the image, for heatmaps: on test for the cross-attention models, on validation and test for MIL |
-| candidates, sizes, img_size | to place every score on the image |
+| Field                       | Content                                                                                                                              |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| ids, paths                  | which image                                                                                                                          |
+| y_true, y_prob              | label and predicted probabilities                                                                                                    |
+| coords                      | the selected patches (size, row, column), in order of selection                                                                      |
+| attn                        | weight of each selected patch in the final decision                                                                                  |
+| zones                       | the zones kept by the coarse stage (H-MS-IPS)                                                                                        |
+| score_maps                  | a score for every candidate patch of the image, for heatmaps: on test for the cross-attention models, on validation and test for MIL |
+| candidates, sizes, img_size | to place every score on the image                                                                                                    |
 
 ### 4.7 Files of one run
 
 One folder per configuration, `results/ips-suite-v3/<configuration>/`, every
 seed of the configuration inside it (file names end with the seed, `_s42`):
 
-| File | Content |
-|---|---|
-| `checkpoints/<run>_weights.pt` | weights of the best epoch |
-| `experiments/<run>_result.json` | configuration, costs, every metric of section 4, history of all epochs |
-| `experiments/<run>_lesions_test.csv`, `_val.csv` | lesion results per image |
-| `experiments/<run>_gradcam_test.csv` | Grad-CAM lesion results per annotated image |
-| `history/<run>_history.json` | metrics, time and memory of every epoch |
-| `history/codecarbon/` | energy log |
-| `predictions/<run>_test.npz`, `_val.npz` | section 4.6 |
-| `saliency/<run>_gradcam_test.npz` | Grad-CAM of every test image (112 × 112) and the class explained |
+| File                                             | Content                                                                |
+| ------------------------------------------------ | ---------------------------------------------------------------------- |
+| `checkpoints/<run>_weights.pt`                   | weights of the best epoch                                              |
+| `experiments/<run>_result.json`                  | configuration, costs, every metric of section 4, history of all epochs |
+| `experiments/<run>_lesions_test.csv`, `_val.csv` | lesion results per image                                               |
+| `experiments/<run>_gradcam_test.csv`             | Grad-CAM lesion results per annotated image                            |
+| `history/<run>_history.json`                     | metrics, time and memory of every epoch                                |
+| `history/codecarbon/`                            | energy log                                                             |
+| `predictions/<run>_test.npz`, `_val.npz`         | section 4.6                                                            |
+| `saliency/<run>_gradcam_test.npz`                | Grad-CAM of every test image (112 × 112) and the class explained       |
 
 The benchmark writes `_bench/experiments/bench.csv`, the aggregation
 `_aggregate/`.
 
 ## 5. Runs without training
 
-| Mode | What it does |
-|---|---|
-| `bench` | random images, a few minutes. Peak memory (selection, training step, inference) and time, varying one factor at a time: patch size (224 to 28 on DDR, 256 to 32 on RSNA), M (2 to 40), candidates scored at a time (8 to 256), lazy against eager loading, an image twice as large, MS-IPS, every H-MS-IPS with and without trained zones, the full image at three resolutions, MIL, self-attention. Writes `bench.csv` |
-| `eval_v2` | scores the 21 models of the previous suite on the test images, with sections 4.3 to 4.6. Clean on DDR; on RSNA those models had seen part of the new test set |
-| `list` | prints the 74 configurations with their exact costs (section 4.1) |
+| Mode      | What it does                                                                                                                                                                                                                                                                                                                                                                                                            |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bench`   | random images, a few minutes. Peak memory (selection, training step, inference) and time, varying one factor at a time: patch size (224 to 28 on DDR, 256 to 32 on RSNA), M (2 to 40), candidates scored at a time (8 to 256), lazy against eager loading, an image twice as large, MS-IPS, every H-MS-IPS with and without trained zones, the full image at three resolutions, MIL, self-attention. Writes `bench.csv` |
+| `eval_v2` | scores the 21 models of the previous suite on the test images, with sections 4.3 to 4.6. Clean on DDR; on RSNA those models had seen part of the new test set                                                                                                                                                                                                                                                           |
+| `list`    | prints the 74 configurations with their exact costs (section 4.1)                                                                                                                                                                                                                                                                                                                                                       |
 
 ## 6. Aggregation (`aggregate-ips-suite-v3.py`, on a laptop)
 
@@ -294,24 +297,24 @@ The benchmark writes `_bench/experiments/bench.csv`, the aggregation
 
 ## 7. Questions it answers
 
-| Question | Configurations | Measures |
-|---|---|---|
-| Does a coarse stage help at the same memory? | H-MS-IPS against IPS at the same final patch | score, paired difference |
-| Does mixing two sizes help? | MS-IPS against its two sizes | score, sizes chosen, value of choosing sizes |
-| Is selection better than shrinking the image? | IPS against the half-resolution image | score at similar memory |
-| What does selection save against using every patch? | IPS against MIL | score, memory, GFLOPs |
-| Which selection module? | cross-attention, self-attention, random, on all 16 selectors | score, lesion hits, Grad-CAM |
-| Does training the coarse stage help? | `_tc` against without | score, share of the lesion kept by the zones |
-| How many patches are needed, for each family? | mstudy | score and memory against M |
-| Few large or many small patches? | equal M × patch² | score at equal memory |
-| Does more resolution help? | hires | score at the same memory |
-| Which patch size for which lesion size? | patch sizes 28 to 256 on two data sets | score, lesion hits |
-| Does it hold with little data? | lowdata | score |
-| Do the patches fall on lesions? | all except the baseline | lesion study |
-| Do the models look at the lesions? | all, baseline included | Grad-CAM energy, pointing game, pixel AUROC |
-| Is the cost known in advance? | bench and every run | predicted against measured memory |
-| Are the models calibrated? | all | ECE, Brier |
-| Is a difference real? | core with three seeds | standard deviation, paired bootstrap |
+| Question                                            | Configurations                                               | Measures                                     |
+| --------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------- |
+| Does a coarse stage help at the same memory?        | H-MS-IPS against IPS at the same final patch                 | score, paired difference                     |
+| Does mixing two sizes help?                         | MS-IPS against its two sizes                                 | score, sizes chosen, value of choosing sizes |
+| Is selection better than shrinking the image?       | IPS against the half-resolution image                        | score at similar memory                      |
+| What does selection save against using every patch? | IPS against MIL                                              | score, memory, GFLOPs                        |
+| Which selection module?                             | cross-attention, self-attention, random, on all 16 selectors | score, lesion hits, Grad-CAM                 |
+| Does training the coarse stage help?                | `_tc` against without                                        | score, share of the lesion kept by the zones |
+| How many patches are needed, for each family?       | mstudy                                                       | score and memory against M                   |
+| Few large or many small patches?                    | equal M × patch²                                             | score at equal memory                        |
+| Does more resolution help?                          | hires                                                        | score at the same memory                     |
+| Which patch size for which lesion size?             | patch sizes 28 to 256 on two data sets                       | score, lesion hits                           |
+| Does it hold with little data?                      | lowdata                                                      | score                                        |
+| Do the patches fall on lesions?                     | all except the baseline                                      | lesion study                                 |
+| Do the models look at the lesions?                  | all, baseline included                                       | Grad-CAM energy, pointing game, pixel AUROC  |
+| Is the cost known in advance?                       | bench and every run                                          | predicted against measured memory            |
+| Are the models calibrated?                          | all                                                          | ECE, Brier                                   |
+| Is a difference real?                               | core with three seeds                                        | standard deviation, paired bootstrap         |
 
 ## 8. Safety of the runs
 

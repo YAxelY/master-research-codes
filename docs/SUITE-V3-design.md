@@ -3,12 +3,12 @@
 Written on 15 November 2026 for the authors (Axel and the supervisors).
 Companion files, all in `master-research-codes/`:
 
-| File | Role |
-|---|---|
-| `ips-suite-v3.ipynb` | the suite (66 configurations, 4 modes) |
-| `run-ips-suite-v3.sh` | cluster script, same mechanics as `run-ips-suite.sh` |
-| `aggregate-ips-suite-v3.py` | tables, seeds, bootstrap, paired comparisons (CPU) |
-| `dataset-probe.py` | one Kaggle cell that exports the facts about DDR and RSNA |
+| File                        | Role                                                      |
+| --------------------------- | --------------------------------------------------------- |
+| `ips-suite-v3.ipynb`        | the suite (66 configurations, 4 modes)                    |
+| `run-ips-suite-v3.sh`       | cluster script, same mechanics as `run-ips-suite.sh`      |
+| `aggregate-ips-suite-v3.py` | tables, seeds, bootstrap, paired comparisons (CPU)        |
+| `dataset-probe.py`          | one Kaggle cell that exports the facts about DDR and RSNA |
 
 **Read section 9 first if you are short on time.** It says what this can
 and cannot give.
@@ -25,7 +25,7 @@ sentence of it should be pasted into the paper. See section 10.
 > **Update, 16 November 2026** (supervisor's decisions of 15 and 16 November).
 > This section supersedes the run lists further down; the notebook
 > (`IPS_MODE=list`) and `submit-v3.sh` are the reference.
->
+> 
 > - **Two patch sizes at most** per model: the three-stage cascade is removed.
 > - **IPS at 32 and 64 px on DDR** are in the main group (`core`), with MS-IPS
 >   64/32 so that it can be compared with its two single-size parts.
@@ -47,7 +47,7 @@ sentence of it should be pasted into the paper. See section 10.
 >   candidate patch (heatmaps without rerunning).
 > - **Launch**: `bash submit-v3.sh <group> <seed>` submits one job per
 >   configuration; a configuration already running in another job is skipped.
->
+> 
 > Group sizes: core 22, ablation 36, mstudy 54, patch 6, base 2, ms 2,
 > lowres 2, hires 4, lowdata 6, misc 2 (136 configurations). The complete
 > list of what is measured is `SUITE-V3-contents.md`.
@@ -68,18 +68,18 @@ variable.
 
 ## 2. Notation
 
-| Symbol | Meaning | Value in the runs |
-|---|---|---|
-| S | side of the square image | 896 (DDR), 1024 (RSNA) |
-| C | channels | 3 (DDR), 1 (RSNA) |
-| p | side of a patch | 224 down to 28 |
-| N_p = (S/p)² | candidates of size p, exact tiling | 16 to 1024 |
-| M | patches kept and trained on | 2 to 160, reference 10 |
-| I | candidates scored per group | 128 |
-| B | images per optimiser step | 16 |
-| p_0 > p_1 > ... | stages of a cascade | e.g. 224 then 56 |
-| K_s | zones kept after stage s | 4 |
-| P_train | pixels that receive gradients, per image | M·p² for IPS |
+| Symbol          | Meaning                                  | Value in the runs      |
+| --------------- | ---------------------------------------- | ---------------------- |
+| S               | side of the square image                 | 896 (DDR), 1024 (RSNA) |
+| C               | channels                                 | 3 (DDR), 1 (RSNA)      |
+| p               | side of a patch                          | 224 down to 28         |
+| N_p = (S/p)²    | candidates of size p, exact tiling       | 16 to 1024             |
+| M               | patches kept and trained on              | 2 to 160, reference 10 |
+| I               | candidates scored per group              | 128                    |
+| B               | images per optimiser step                | 16                     |
+| p_0 > p_1 > ... | stages of a cascade                      | e.g. 224 then 56       |
+| K_s             | zones kept after stage s                 | 4                      |
+| P_train         | pixels that receive gradients, per image | M·p² for IPS           |
 
 ## 3. The four models
 
@@ -91,11 +91,12 @@ trained pixels are chosen differs.
 ResNet-18. P_train = s².
 
 **IPS** (Bergner et al., 2023). One patch size p.
+
 1. Selection, no gradient: the N_p candidates are shuffled, scored I at a
    time by the encoder and the attention module, and the best M are kept.
 2. Training step: the M kept patches go through the same encoder and
    attention module with gradients; the attention output is classified.
-P_train = M·p².
+   P_train = M·p².
 
 **MS-IPS** (flat). The candidate list is the union of several sizes. A
 learned scale embedding is added to each patch embedding. Every patch is
@@ -110,11 +111,11 @@ M patches, and only these are trained on. P_train = M·p_last².
 
 Three switches are new in v3 (all off by default, so v2 weights load):
 
-| Switch | Effect | Used for |
-|---|---|---|
-| `train_coarse = k` | the k best coarse zones are appended to the training bag | claim C5 and hypothesis H3 |
-| `encode_px` | patches of a scale are resized before the encoder | resampling control, low-resolution coarse stage |
-| `loading = 'lazy'` | the image stays on the CPU | claim C3 |
+| Switch             | Effect                                                   | Used for                                        |
+| ------------------ | -------------------------------------------------------- | ----------------------------------------------- |
+| `train_coarse = k` | the k best coarse zones are appended to the training bag | claim C5 and hypothesis H3                      |
+| `encode_px`        | patches of a scale are resized before the encoder        | resampling control, low-resolution coarse stage |
+| `loading = 'lazy'` | the image stays on the CPU                               | claim C3                                        |
 
 ## 4. Claims: what is proved, what is measured
 
@@ -185,15 +186,16 @@ The smoke test already confirmed that lazy and eager give identical scores.
 full image on DDR gives a ≈ 0.34 GB and b ≈ 0.435 GB per million pixels.
 It then predicts the other runs without being fitted on them:
 
-| Run | B·P_train (Mpx) | Predicted | Measured |
-|---|---|---|---|
-| DDR H-MS-IPS 224/112 | 2.01 | 1.21 GB | 1.21 GB |
-| DDR H-MS-IPS 224/56 | 0.50 | 0.56 GB | 0.53 GB |
-| RSNA full image | 16.78 | 7.64 GB | 7.67 GB |
-| RSNA IPS 128 | 2.62 | 1.48 GB | 1.41 GB |
-| RSNA H-MS-IPS 256/64 | 0.66 | 0.62 GB | 0.56 GB |
+| Run                  | B·P_train (Mpx) | Predicted | Measured |
+| -------------------- | --------------- | --------- | -------- |
+| DDR H-MS-IPS 224/112 | 2.01            | 1.21 GB   | 1.21 GB  |
+| DDR H-MS-IPS 224/56  | 0.50            | 0.56 GB   | 0.53 GB  |
+| RSNA full image      | 16.78           | 7.64 GB   | 7.67 GB  |
+| RSNA IPS 128         | 2.62            | 1.48 GB   | 1.41 GB  |
+| RSNA H-MS-IPS 256/64 | 0.66            | 0.62 GB   | 0.56 GB  |
 
 *Consequences.*
+
 1. Memory is known before training from M and p alone. This is the part of
    "cost known in advance" that the data already supports.
 2. Two models with the same M·p² use the same memory. **The memory gap
@@ -233,38 +235,38 @@ rarely selected rarely receives gradients. On RSNA the 128 px size took
 
 ## 5. Hypotheses, the runs that test them, and what each outcome means
 
-| | Hypothesis | Test (a against b) | If true | If false |
-|---|---|---|---|---|
-| H1 | A coarse stage improves selection at a fixed final patch | `h224_56` vs `ips56`, `h224_112` vs `ips112`, `h256_64` vs `ips64` | the cascade has a reason to exist: better score at equal memory | the cascade costs 25 % more selection compute for nothing |
-| H2 | Selecting patches beats shrinking the image at equal memory | `ips128` vs `base448` (DDR), vs `base512` (RSNA) | patch selection is justified on this data | the data set does not need high resolution; nothing built on IPS can win there |
-| H3 | The cascade is held back because its coarse stage is untrained | `*_tc` vs the same without; zone lesion recall before and after | a real, explainable fix; the paper has a method contribution | C5 is true but harmless; drop the cascade |
-| H4 | At equal trained pixels, many small patches beat few large ones when lesions are tiny (DDR), and the reverse when they are large (RSNA) | `ips64_m40` and `ips32_m160` vs `ips128` | patch size should follow lesion size, shown without any multi-scale model | the lesion-size argument of the draft has no support |
-| H5 | The score saturates in M | `ips128_m2/5/10/20`, `ips64_m10/20/40` | M can be cut, with a known memory gain | more patches keep helping: report the slope |
-| H6 | With little data, smaller patches generalise better (Riffi-Aslett and Fell, on synthetic data and traffic signs) | `*_f25` runs | a replication on medical images | their finding does not transfer |
-| H7 | Resampling patches to a common size biases the selection | `ms128_64_rs` vs `ms128_64`: scale counts and score | the v2 correction was needed; one sentence in the paper | the correction was cosmetic |
-| H8 | Lazy loading changes memory, not results | `ips128_lazy` vs `ips128`, and the bench | C3 measured | a bug |
-| H9 | On DDR, IPS at 1792 px beats IPS at 896 px, and reaches or beats the full image at 896 px, at the memory of IPS at 896 px | `r1792_ips128` vs `ips128` and vs `base896` | the case for patch selection on medical images, shown directly: resolution the full image cannot afford | DDR grading does not need more than 896 px with this backbone |
+|     | Hypothesis                                                                                                                              | Test (a against b)                                                 | If true                                                                                                 | If false                                                                       |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| H1  | A coarse stage improves selection at a fixed final patch                                                                                | `h224_56` vs `ips56`, `h224_112` vs `ips112`, `h256_64` vs `ips64` | the cascade has a reason to exist: better score at equal memory                                         | the cascade costs 25 % more selection compute for nothing                      |
+| H2  | Selecting patches beats shrinking the image at equal memory                                                                             | `ips128` vs `base448` (DDR), vs `base512` (RSNA)                   | patch selection is justified on this data                                                               | the data set does not need high resolution; nothing built on IPS can win there |
+| H3  | The cascade is held back because its coarse stage is untrained                                                                          | `*_tc` vs the same without; zone lesion recall before and after    | a real, explainable fix; the paper has a method contribution                                            | C5 is true but harmless; drop the cascade                                      |
+| H4  | At equal trained pixels, many small patches beat few large ones when lesions are tiny (DDR), and the reverse when they are large (RSNA) | `ips64_m40` and `ips32_m160` vs `ips128`                           | patch size should follow lesion size, shown without any multi-scale model                               | the lesion-size argument of the draft has no support                           |
+| H5  | The score saturates in M                                                                                                                | `ips128_m2/5/10/20`, `ips64_m10/20/40`                             | M can be cut, with a known memory gain                                                                  | more patches keep helping: report the slope                                    |
+| H6  | With little data, smaller patches generalise better (Riffi-Aslett and Fell, on synthetic data and traffic signs)                        | `*_f25` runs                                                       | a replication on medical images                                                                         | their finding does not transfer                                                |
+| H7  | Resampling patches to a common size biases the selection                                                                                | `ms128_64_rs` vs `ms128_64`: scale counts and score                | the v2 correction was needed; one sentence in the paper                                                 | the correction was cosmetic                                                    |
+| H8  | Lazy loading changes memory, not results                                                                                                | `ips128_lazy` vs `ips128`, and the bench                           | C3 measured                                                                                             | a bug                                                                          |
+| H9  | On DDR, IPS at 1792 px beats IPS at 896 px, and reaches or beats the full image at 896 px, at the memory of IPS at 896 px               | `r1792_ips128` vs `ips128` and vs `base896`                        | the case for patch selection on medical images, shown directly: resolution the full image cannot afford | DDR grading does not need more than 896 px with this backbone                  |
 
 H1, H2 and H9 decide what the paper is about. Everything else refines the
 picture. H9 was added after the dataset probe (section 7.1).
 
 ## 6. What every run records
 
-| Recorded | Why |
-|---|---|
-| All metrics on train and validation at every epoch | curves, overfitting |
-| Best epoch on validation by the main metric; all metrics at that epoch | ends the "maximum of each metric" artefact |
-| **Test** metrics with the weights of that epoch | the reported number |
-| Binary: threshold fixed on validation, sensitivity and specificity on test | an honest recall |
-| Per image, validation and test: probabilities and selected patches (`predictions/*.npz`) | any metric, threshold, calibration, bootstrap, figure, later, without a GPU |
-| Time per epoch split into data, selection, training step, GPU synchronised | time that describes the model |
-| Peak memory per phase (selection, step), training and inference | C3, C4, the frontier figure |
-| Inference latency per image | deployment cost |
-| Exact pixel counts (selection read and encoded, trained) | C1, C2 |
-| Selection study on test: uniform, scale-matched, learned | worth of positions and of scales |
-| Lesion overlap on test and validation, per lesion type, against exact chance; for cascades, share of the lesion inside the kept zones | interpretability; direct evidence for H3 |
-| Scale counts over the whole test set | which size is used |
-| Energy and CO2 (codecarbon) | only meaningful once data time is small |
+| Recorded                                                                                                                              | Why                                                                         |
+| ------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| All metrics on train and validation at every epoch                                                                                    | curves, overfitting                                                         |
+| Best epoch on validation by the main metric; all metrics at that epoch                                                                | ends the "maximum of each metric" artefact                                  |
+| **Test** metrics with the weights of that epoch                                                                                       | the reported number                                                         |
+| Binary: threshold fixed on validation, sensitivity and specificity on test                                                            | an honest recall                                                            |
+| Per image, validation and test: probabilities and selected patches (`predictions/*.npz`)                                              | any metric, threshold, calibration, bootstrap, figure, later, without a GPU |
+| Time per epoch split into data, selection, training step, GPU synchronised                                                            | time that describes the model                                               |
+| Peak memory per phase (selection, step), training and inference                                                                       | C3, C4, the frontier figure                                                 |
+| Inference latency per image                                                                                                           | deployment cost                                                             |
+| Exact pixel counts (selection read and encoded, trained)                                                                              | C1, C2                                                                      |
+| Selection study on test: uniform, scale-matched, learned                                                                              | worth of positions and of scales                                            |
+| Lesion overlap on test and validation, per lesion type, against exact chance; for cascades, share of the lesion inside the kept zones | interpretability; direct evidence for H3                                    |
+| Scale counts over the whole test set                                                                                                  | which size is used                                                          |
+| Energy and CO2 (codecarbon)                                                                                                           | only meaningful once data time is small                                     |
 
 Chance in the lesion study is exact: all candidates of the same size are
 enumerated, nothing is sampled.
@@ -276,10 +278,10 @@ generator, reseeded before each evaluation, so an evaluation is repeatable.
 
 ## 7. Data splits
 
-| | Train | Validation (choose epoch) | Test (report) |
-|---|---|---|---|
-| DDR | `train` | `valid` | `test`, never used in v2 |
-| RSNA | 70 % of patients | 15 % | 15 % |
+|      | Train            | Validation (choose epoch) | Test (report)            |
+| ---- | ---------------- | ------------------------- | ------------------------ |
+| DDR  | `train`          | `valid`                   | `test`, never used in v2 |
+| RSNA | 70 % of patients | 15 %                      | 15 %                     |
 
 RSNA is split 70 / 15 / 15 by a hash of the patient identifier (decided
 on 15 November, for a standard split). The v3 training set is a subset of
@@ -296,19 +298,19 @@ Source: `results-done-right-I-guess/dataset_probe.zip`, produced by
 
 **DDR images.**
 
-| Quantity | Value |
-|---|---|
-| Images (train / valid / test, with grade 5) | 6 835 / 2 733 / 4 105 |
-| Ungradable (grade 5), excluded | 575 / 230 / 346 |
-| Width | 702 to 5 184 px, median 2 592 |
-| Height | 706 to 3 456 px, median 1 824 |
-| Megapixels | 0.5 to 17.9, median 4.5 |
-| Distinct sizes | 132; most common 2592×1728 and 2736×1824 |
-| Aspect ratio | 0.98 to 1.76, median 1.33 |
-| Pixels kept at 896×896 | median 18 % |
-| Share of the photograph that is retina (not black) | median 54 % |
-| Retina bounding box, width over height | median 1.00 (a disc) |
-| Decode and resize, one image, one core | median 112 ms |
+| Quantity                                           | Value                                    |
+| -------------------------------------------------- | ---------------------------------------- |
+| Images (train / valid / test, with grade 5)        | 6 835 / 2 733 / 4 105                    |
+| Ungradable (grade 5), excluded                     | 575 / 230 / 346                          |
+| Width                                              | 702 to 5 184 px, median 2 592            |
+| Height                                             | 706 to 3 456 px, median 1 824            |
+| Megapixels                                         | 0.5 to 17.9, median 4.5                  |
+| Distinct sizes                                     | 132; most common 2592×1728 and 2736×1824 |
+| Aspect ratio                                       | 0.98 to 1.76, median 1.33                |
+| Pixels kept at 896×896                             | median 18 %                              |
+| Share of the photograph that is retina (not black) | median 54 %                              |
+| Retina bounding box, width over height             | median 1.00 (a disc)                     |
+| Decode and resize, one image, one core             | median 112 ms                            |
 
 Two consequences.
 
@@ -327,12 +329,12 @@ Two consequences.
 **DDR lesions** (608 annotated images read, 42 783 connected components;
 sizes after the stretch to 896 px):
 
-| Type | Images | Lesions per image, median | Diameter, median (p95) | Fit inside a 14 px patch | inside 28 px | inside 56 px |
-|---|---|---|---|---|---|---|
-| Micro-aneurysm | 438 | 9 | 3.2 px (6.7) | 99.3 % | 100 % | 100 % |
-| Hard exudate | 416 | 25 | 3.4 px (13.6) | 89.3 % | 97.4 % | 99.5 % |
-| Haemorrhage | 488 | 11 | 6.3 px (23.9) | 73.4 % | 91.9 % | 98.1 % |
-| Soft exudate | 153 | 3 | 12.3 px (33.7) | 42.8 % | 70.3 % | 96.3 % |
+| Type           | Images | Lesions per image, median | Diameter, median (p95) | Fit inside a 14 px patch | inside 28 px | inside 56 px |
+| -------------- | ------ | ------------------------- | ---------------------- | ------------------------ | ------------ | ------------ |
+| Micro-aneurysm | 438    | 9                         | 3.2 px (6.7)           | 99.3 %                   | 100 %        | 100 %        |
+| Hard exudate   | 416    | 25                        | 3.4 px (13.6)          | 89.3 %                   | 97.4 %       | 99.5 %       |
+| Haemorrhage    | 488    | 11                        | 6.3 px (23.9)          | 73.4 %                   | 91.9 %       | 98.1 %       |
+| Soft exudate   | 153    | 3                         | 12.3 px (33.7)         | 42.8 %                   | 70.3 %       | 96.3 %       |
 
 Lesions cover 0.19 % of the image (median; mean 0.69 %; mean 0.85 % on the
 67 annotated images of the grading test split, which matches the earlier
@@ -361,17 +363,17 @@ test 67, absent 2.
 
 **RSNA.**
 
-| Quantity | Value |
-|---|---|
-| Patients (one image each, all 1024×1024, 8 bit) | 26 684 |
-| Classes | Lung Opacity 6 012 patients; Normal; No Lung Opacity / Not Normal |
-| v3 split | 70 / 15 / 15 by patient: about 18 700 / 4 000 / 4 000; exact counts are printed at the start of every RSNA run (the probe was run with the earlier 75 / 12 / 13 rule: 20 005 / 3 127 / 3 552) |
-| Boxes | 9 555; one box 2 614 patients, two 3 266, three 119, four 13 |
-| Box short side | median 208 px (5 % under 109 px) |
-| Box long side | median 304 px |
-| Boxes that fit in a 128 px patch / 256 px patch | 2.1 % / 36.2 % |
-| Union of boxes per positive image | median 7.9 % (first 3 000 patients) |
-| `Training/Masks` | the boxes drawn as images (IoU 1.00 with the boxes, empty on negatives), not lung masks |
+| Quantity                                        | Value                                                                                                                                                                                         |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Patients (one image each, all 1024×1024, 8 bit) | 26 684                                                                                                                                                                                        |
+| Classes                                         | Lung Opacity 6 012 patients; Normal; No Lung Opacity / Not Normal                                                                                                                             |
+| v3 split                                        | 70 / 15 / 15 by patient: about 18 700 / 4 000 / 4 000; exact counts are printed at the start of every RSNA run (the probe was run with the earlier 75 / 12 / 13 rule: 20 005 / 3 127 / 3 552) |
+| Boxes                                           | 9 555; one box 2 614 patients, two 3 266, three 119, four 13                                                                                                                                  |
+| Box short side                                  | median 208 px (5 % under 109 px)                                                                                                                                                              |
+| Box long side                                   | median 304 px                                                                                                                                                                                 |
+| Boxes that fit in a 128 px patch / 256 px patch | 2.1 % / 36.2 %                                                                                                                                                                                |
+| Union of boxes per positive image               | median 7.9 % (first 3 000 patients)                                                                                                                                                           |
+| `Training/Masks`                                | the boxes drawn as images (IoU 1.00 with the boxes, empty on negatives), not lung masks                                                                                                       |
 
 Consequence: on RSNA every patch size we use is smaller than the lesion,
 and the lesion covers a large part of the image. This is the opposite
@@ -382,25 +384,25 @@ image is expected to do well there (H2).
 
 `IPS_MODE=list` prints all 66 with their exact costs.
 
-| Tier | Group | Configs | Seeds | Runs | Purpose |
-|---|---|---|---|---|---|
-| 0 | `bench` | (no data) | | | C3, C4: memory and latency, a few minutes |
-| 0 | `eval_v2` | 21 v2 weights | | | clean DDR test scores and lesion overlap for the existing models, no training |
-| 1 | `core` | 17 (9 DDR, 8 RSNA) | 3 | 51 | H1, H2, H3 |
-| 2 | `patch` + `mstudy` + `base` + `ms` + `lowres` | 43 more | 1 | 43 | H4, H5, H7, the single-scale sweep |
-| 1 | `hires` | 4 (DDR at 1792 px) | 1, then 3 if it helps | 4 | H9: more resolution at the same memory |
-| 3 | `lowdata`, `misc` | 8 | 1 (3 for `lowdata` if H6 looks true) | 8 | H6, H8 |
+| Tier | Group                                         | Configs            | Seeds                                | Runs | Purpose                                                                       |
+| ---- | --------------------------------------------- | ------------------ | ------------------------------------ | ---- | ----------------------------------------------------------------------------- |
+| 0    | `bench`                                       | (no data)          |                                      |      | C3, C4: memory and latency, a few minutes                                     |
+| 0    | `eval_v2`                                     | 21 v2 weights      |                                      |      | clean DDR test scores and lesion overlap for the existing models, no training |
+| 1    | `core`                                        | 17 (9 DDR, 8 RSNA) | 3                                    | 51   | H1, H2, H3                                                                    |
+| 2    | `patch` + `mstudy` + `base` + `ms` + `lowres` | 43 more            | 1                                    | 43   | H4, H5, H7, the single-scale sweep                                            |
+| 1    | `hires`                                       | 4 (DDR at 1792 px) | 1, then 3 if it helps                | 4    | H9: more resolution at the same memory                                        |
+| 3    | `lowdata`, `misc`                             | 8                  | 1 (3 for `lowdata` if H6 looks true) | 8    | H6, H8                                                                        |
 
 Core runs (one line each; M = 10 everywhere):
 
-| DDR | RSNA | Role |
-|---|---|---|
-| `ddr_base896` | `rsna_base1024` | full image |
-| `ddr_base448` | `rsna_base512` | H2: image at half resolution, memory close to IPS |
-| `ddr_ips128` | `rsna_ips128` | IPS reference |
-| `ddr_ips112`, `ddr_ips56` | `rsna_ips64` | H1: IPS at the cascade's final size |
-| `ddr_h224_112`, `ddr_h224_56` | `rsna_h256_128`, `rsna_h256_64` | H1: the cascades |
-| `ddr_h224_112_tc`, `ddr_h224_56_tc` | `rsna_h256_128_tc`, `rsna_h256_64_tc` | H3: coarse zones trained |
+| DDR                                 | RSNA                                  | Role                                              |
+| ----------------------------------- | ------------------------------------- | ------------------------------------------------- |
+| `ddr_base896`                       | `rsna_base1024`                       | full image                                        |
+| `ddr_base448`                       | `rsna_base512`                        | H2: image at half resolution, memory close to IPS |
+| `ddr_ips128`                        | `rsna_ips128`                         | IPS reference                                     |
+| `ddr_ips112`, `ddr_ips56`           | `rsna_ips64`                          | H1: IPS at the cascade's final size               |
+| `ddr_h224_112`, `ddr_h224_56`       | `rsna_h256_128`, `rsna_h256_64`       | H1: the cascades                                  |
+| `ddr_h224_112_tc`, `ddr_h224_56_tc` | `rsna_h256_128_tc`, `rsna_h256_64_tc` | H3: coarse zones trained                          |
 
 Note on `_tc`: training on 4 zones of 224 px costs 200 704 pixels per
 image, more than IPS itself. These runs test H3 cleanly; they are not a
@@ -412,11 +414,11 @@ runs with over 1 000 candidates took 36 to 46 h. The 21 runs cost about
 350 GPU-hours and finished in about three days, so roughly five GPUs were
 in use. At that speed:
 
-| Tier | GPU-hours (upper bound) | Days on five GPUs |
-|---|---|---|
-| 1, core | about 660 | 5 to 6 |
-| 2 | about 700 | 6 |
-| 3 | about 80 | under 1 |
+| Tier    | GPU-hours (upper bound) | Days on five GPUs |
+| ------- | ----------------------- | ----------------- |
+| 1, core | about 660               | 5 to 6            |
+| 2       | about 700               | 6                 |
+| 3       | about 80                | under 1           |
 
 v3 should be faster on DDR: v2 used 2 data workers while each job reserved
 16 CPUs, and decoded every 4.7-megapixel image again at every epoch. v3
@@ -431,6 +433,7 @@ changes the learning-rate schedule. Authors' call; the suite takes
 `IPS_EPOCHS`.
 
 **Order of launch.**
+
 1. `bench`, `eval_v2`, and one `IPS_EPOCHS=1` dry run. Same day.
 2. `core`, seed 42 (17 jobs). Look at H1 and H2 on one seed.
 3. If H1 or H3 shows a gap above 0.01: seeds 43 and 44 for `core`.
@@ -448,6 +451,7 @@ standard deviation over seeds. The aggregate script prints both.
 These are judgements, not results. Probabilities are my rough estimates.
 
 **What the existing evidence already says.**
+
 - On RSNA, the full image, IPS and every reasonable variant land within
   0.003 AUC of each other. Pneumonia opacities are large (median box union
   8.7 % of the image). It is likely (I would say four chances in five) that
@@ -464,11 +468,11 @@ These are judgements, not results. Probabilities are my rough estimates.
 
 **Scenarios after the core runs.**
 
-| Scenario | My estimate | What it gives |
-|---|---|---|
-| A. The cascade (as is or with trained coarse zones) beats IPS at the same final patch on DDR by a margin clear of noise | about 1 in 4 | a method paper: "coarse-to-fine selection improves the memory and quality trade-off", with C5 as the explanation |
-| B. Cascade and IPS tie at every matched size | about 1 in 2 | no method contribution. A controlled study: patch size and M set the cost, the cost is predictable (C1 to C4), multi-scale selection adds nothing on these data |
-| C. IPS at small patches beats the cascade | about 1 in 4 | same study, with a clear negative result on cascades |
+| Scenario                                                                                                                | My estimate  | What it gives                                                                                                                                                   |
+| ----------------------------------------------------------------------------------------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A. The cascade (as is or with trained coarse zones) beats IPS at the same final patch on DDR by a margin clear of noise | about 1 in 4 | a method paper: "coarse-to-fine selection improves the memory and quality trade-off", with C5 as the explanation                                                |
+| B. Cascade and IPS tie at every matched size                                                                            | about 1 in 2 | no method contribution. A controlled study: patch size and M set the cost, the cost is predictable (C1 to C4), multi-scale selection adds nothing on these data |
+| C. IPS at small patches beats the cascade                                                                               | about 1 in 4 | same study, with a clear negative result on cascades                                                                                                            |
 
 Separately, about 2 chances in 5 that `ddr_base448` matches `ddr_ips128`.
 If it does, the honest headline on DDR is that half resolution is enough
@@ -476,6 +480,7 @@ for grading at this backbone size, and selection only pays below that
 memory.
 
 **Is it a waste of time?**
+
 - **Yes, if the goal stays "show that MS-IPS or H-MS-IPS beats IPS".** The
   21 corrected runs do not point that way, and running more cascade
   variants without the matched controls would repeat the v2 situation.
