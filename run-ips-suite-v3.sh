@@ -30,11 +30,14 @@
 #  splits at 896 px, about 15 GB more at 1792 px); the others wait for it and
 #  reuse it.
 #
-#  Outputs, under ips-project/results/ips-suite-v3/ :
-#      checkpoints/   <run>_weights.pt  (best epoch on validation)
-#      experiments/   <run>_result.json, <run>_lesions_{test,val}.csv, bench.csv
-#      predictions/   <run>_val.npz, <run>_test.npz  (per image)
-#      history/       codecarbon/<run>/
+#  Outputs, under ips-project/results/ips-suite-v3/ : ONE FOLDER PER
+#  CONFIGURATION (every seed of that configuration inside it):
+#      <configuration>/checkpoints/   <run>_weights.pt  (best epoch on validation)
+#      <configuration>/experiments/   <run>_result.json, lesion and Grad-CAM tables
+#      <configuration>/history/       <run>_history.json, codecarbon/
+#      <configuration>/predictions/   <run>_val.npz, <run>_test.npz  (per image)
+#      <configuration>/saliency/      <run>_gradcam_test.npz  (Grad-CAM maps)
+#      _bench/experiments/bench.csv   (IPS_MODE=bench)
 #  Then:  python aggregate-ips-suite-v3.py ips-project/results/ips-suite-v3
 # =============================================================================
 
@@ -105,11 +108,7 @@ mkdir -p "$WORK_KAGGLE"
 mkdir -p "$BACKBONE_CACHE"
 
 # Sous-dossiers alignés sur les OUT_* définis dans le notebook
-mkdir -p "$RESULTS_DIR/checkpoints"
-mkdir -p "$RESULTS_DIR/history"
-mkdir -p "$RESULTS_DIR/experiments"
-mkdir -p "$RESULTS_DIR/saliency"
-mkdir -p "$RESULTS_DIR/predictions"
+mkdir -p "$RESULTS_DIR"          # the notebook creates one sub-folder per configuration
 mkdir -p "$WORK_DIR/cache"
 
 cd "$WORK_DIR"
@@ -264,13 +263,9 @@ PYEOF
 #  Chemins et sélection passés au notebook par l'environnement
 # =============================================================================
 export IPS_WORK="$(pwd)/outputs"
-export IPS_OUT_CKPT="$(pwd)/results/$NOTEBOOK_NAME/checkpoints"
-export IPS_OUT_HIST="$(pwd)/results/$NOTEBOOK_NAME/history"
-export IPS_OUT_EXPE="$(pwd)/results/$NOTEBOOK_NAME/experiments"
-export IPS_OUT_SAL="$(pwd)/results/$NOTEBOOK_NAME/saliency"
+export IPS_RESULTS="$(pwd)/results/$NOTEBOOK_NAME"
 export IPS_DDR_DIR="$(pwd)/data/datasets/samriddhibagchi/ddr-dataset-credits-to-authors/DDR-dataset"
 export IPS_RSNA_DIR="$(pwd)/data/datasets/iamtapendu/rsna-pneumonia-processed-dataset"
-export IPS_OUT_PRED="$(pwd)/results/$NOTEBOOK_NAME/predictions"
 export IPS_RUNS="$RUN_NAME"
 export IPS_EPOCHS="${IPS_EPOCHS:-}"
 export IPS_MODE="${IPS_MODE:-train}"
@@ -332,7 +327,7 @@ if [ $EXIT_CODE -eq 0 ]; then
 
     echo ""
     echo "  Checkpoints :"
-    find "$RD/checkpoints" -name "*.pt" -newer "$STAMP" 2>/dev/null | sort \
+    find "$RD" -path "*/checkpoints/*" -name "*_weights.pt" -newer "$STAMP" 2>/dev/null | sort \
         | while read f; do
             printf "    %-52s  %s MB\n" \
                 "$(basename "$f")" "$(du -m "$f" | cut -f1)"
@@ -340,7 +335,7 @@ if [ $EXIT_CODE -eq 0 ]; then
 
     echo ""
     echo "  Results :"
-    find "$RD/experiments" -name "*_result.json" -newer "$STAMP" 2>/dev/null | sort \
+    find "$RD" -path "*/experiments/*" -name "*_result.json" -newer "$STAMP" 2>/dev/null | sort \
         | while read f; do
             python - "$f" << 'PYEOF2'
 import json, sys
@@ -351,7 +346,7 @@ PYEOF2
           done
     echo ""
     echo "  Other files written by this job :"
-    find "$RD/experiments" "$RD/predictions" -type f -newer "$STAMP" 2>/dev/null | wc -l
+    find "$RD" -type f -newer "$STAMP" 2>/dev/null | wc -l
 
 else
     echo ""

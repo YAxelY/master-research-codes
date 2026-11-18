@@ -3,8 +3,9 @@
 
     python aggregate-ips-suite-v3.py RESULTS_DIR [--boot 2000]
 
-RESULTS_DIR is the folder that holds `experiments/` (the *_result.json
-files) and `predictions/` (the *.npz files).
+RESULTS_DIR is the results folder of the suite: one sub-folder per
+configuration, each with `experiments/` (the *_result.json files) and
+`predictions/` (the *.npz files).
 
 Writes into RESULTS_DIR/aggregate/ :
   runs.csv        one row per run (one seed)
@@ -85,10 +86,12 @@ def boot(y, p, task, n, rng, q=None):
     return np.percentile(out, [2.5, 97.5]) if out else (np.nan, np.nan)
 
 
-def load_pred(pred_dir, run, split='test'):
-    f = pred_dir / f"{run}_{split}.npz"
-    if not f.exists():
+def load_pred(root, run, split='test'):
+    """Per-image predictions of a run, wherever its configuration folder is."""
+    hits = sorted(root.glob(f"*/predictions/{run}_{split}.npz"))
+    if not hits:
         return None
+    f = hits[0]
     z = np.load(f, allow_pickle=False)
     o = np.argsort(z['ids'])
     return z['y_true'][o], z['y_prob'][o].astype(np.float64)
@@ -100,13 +103,12 @@ def main():
     ap.add_argument('--boot', type=int, default=2000)
     a = ap.parse_args()
     root = Path(a.root)
-    exp, pred = root / 'experiments', root / 'predictions'
-    out = root / 'aggregate'
+    out = root / '_aggregate'
     out.mkdir(exist_ok=True)
     rng = np.random.default_rng(0)
 
     rows = []
-    for f in sorted(exp.glob('*_result.json')):
+    for f in sorted(root.glob('*/experiments/*_result.json')):
         r = json.load(open(f))
         c, k, t, key = r['config'], r['cost'], r['timing'], r['main_metric']
         task = c['task_type']
@@ -172,12 +174,12 @@ def main():
                     if typ in les:
                         row[f'les_{typ}_x'] = les[typ]['enrichment']
                         row[f'les_{typ}_hit'] = les[typ]['hit_rate']
-        pr = load_pred(pred, r['run_name'])
+        pr = load_pred(root, r['run_name'])
         if pr is not None and a.boot:
             row['ci_lo'], row['ci_hi'] = boot(pr[0], pr[1], task, a.boot, rng)
         rows.append(row)
     if not rows:
-        sys.exit(f"no *_result.json in {exp}")
+        sys.exit(f"no */experiments/*_result.json in {root}")
     runs = pd.DataFrame(rows)
     runs.to_csv(out / 'runs.csv', index=False)
 
@@ -210,7 +212,7 @@ def main():
     prow = []
     for x, y, why in all_pairs:
         for seed in sorted(set(runs[runs.config == x].seed) & set(runs[runs.config == y].seed)):
-            px, py = load_pred(pred, f"{x}_s{seed}"), load_pred(pred, f"{y}_s{seed}")
+            px, py = load_pred(root, f"{x}_s{seed}"), load_pred(root, f"{y}_s{seed}")
             if px is None or py is None or len(px[0]) != len(py[0]):
                 continue
             task = 'ordinal' if px[1].shape[1] > 2 else 'binary'

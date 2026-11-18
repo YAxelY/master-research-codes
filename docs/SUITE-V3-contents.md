@@ -51,18 +51,43 @@ warm-up then cosine decay, weight decay 0.1, 50 epochs, batch 16, M = 10 and
 128 candidates scored at a time unless stated. Every model uses at most two
 patch sizes.
 
-## 3. The 166 configurations
+## 3. The 232 configurations
 
-### focus (13): the selection of 17 November, launched first
+### focus (14): the selection of 18 November, launched first
 
 | DDR (896 px) | RSNA (1024 px) |
 |---|---|
-| full image 896, MIL 128 | full image 1024, MIL 128, MIL 256 |
-| IPS 64, IPS 32 | IPS 256, IPS 128 |
-| MS-IPS 64/32 | MS-IPS 256/128 |
-| H-MS-IPS 64 then 32 (keeps 49 of 196 zones, a quarter of the image) | H-MS-IPS 256 then 128 |
+| full image 896 | full image 1024 |
+| MIL 66, MIL 33 | MIL 300, MIL 150 |
+| IPS 66, IPS 33 | IPS 300, IPS 150 |
+| MS-IPS 66/33 | MS-IPS 300/150 |
+| H-MS-IPS 66 then 33 (keeps 49 of 196 zones) | H-MS-IPS 300 then 150 (keeps 4 of 16 zones) |
 
-These 13 are also part of `core`.
+These sizes do not divide the image. The tiling gets one more row and
+column of patches, which overflow the image and are completed with black:
+
+| Size | Patches per side | Tiled width | Overflow |
+|---|---|---|---|
+| 66 px on 896 | 14 | 924 px | 28 px |
+| 33 px on 896 | 28 | 924 px | 28 px |
+| 300 px on 1024 | 4 | 1200 px | 176 px |
+| 150 px on 1024 | 7 | 1050 px | 26 px |
+
+The black part is read by the encoder like the rest, so the selection cost
+of IPS 300 on RSNA is 1.37 images instead of 1.00.
+
+### focus_abl (18) and focus_m (36): ablations and M of the focus
+
+- `focus_abl`: each of the 8 selectors of `focus` with the self-attention
+  aggregator and with random selection, plus the 2 cascades with their
+  coarse zones trained.
+- `focus_m`: each of the 8 selectors with every M among 2, 5, 20, 40, 80, 160
+  smaller than its pool of candidates (up to 160 on DDR; up to 5 for IPS 300
+  and H-MS-IPS 300/150, which have 16 candidates; up to 40 for IPS 150 and
+  MS-IPS 300/150).
+
+The groups below are the earlier selection (sizes that divide the image),
+kept and runnable with the same commands.
 
 ### core (24): the main table, three seeds
 
@@ -228,15 +253,22 @@ important patch.
 
 ### 4.7 Files of one run
 
+One folder per configuration, `results/ips-suite-v3/<configuration>/`, every
+seed of the configuration inside it (file names end with the seed, `_s42`):
+
 | File | Content |
 |---|---|
 | `checkpoints/<run>_weights.pt` | weights of the best epoch |
 | `experiments/<run>_result.json` | configuration, costs, every metric of section 4, history of all epochs |
 | `experiments/<run>_lesions_test.csv`, `_val.csv` | lesion results per image |
-| `predictions/<run>_test.npz`, `_val.npz` | section 4.6 |
-| `predictions/<run>_gradcam_test.npz` | Grad-CAM of every test image (112 × 112) and the class explained |
 | `experiments/<run>_gradcam_test.csv` | Grad-CAM lesion results per annotated image |
-| `history/codecarbon/<run>/` | energy log |
+| `history/<run>_history.json` | metrics, time and memory of every epoch |
+| `history/codecarbon/` | energy log |
+| `predictions/<run>_test.npz`, `_val.npz` | section 4.6 |
+| `saliency/<run>_gradcam_test.npz` | Grad-CAM of every test image (112 × 112) and the class explained |
+
+The benchmark writes `_bench/experiments/bench.csv`, the aggregation
+`_aggregate/`.
 
 ## 5. Runs without training
 
