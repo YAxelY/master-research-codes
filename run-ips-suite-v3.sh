@@ -166,6 +166,7 @@ if [ ! -f ".deps_ok" ]; then
         Pillow \
         PyYAML \
         kaggle \
+        six \
         nbconvert \
         tqdm \
         pandas \
@@ -176,6 +177,8 @@ if [ ! -f ".deps_ok" ]; then
 else
     echo "[SETUP] Dépendances déjà installées."
 fi
+# the kaggle client imports six without declaring it: an existing venv may lack it
+python -c "import six" 2>/dev/null || pip install --quiet six
 
 # =============================================================================
 #  Téléchargement des datasets manquants
