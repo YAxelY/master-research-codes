@@ -23,6 +23,11 @@
 #  Dry run, one epoch:
 #    IPS_EPOCHS=1 sbatch -J v3_try run-ips-suite-v3.sh ddr_ips64
 #
+#  Your own copy of the data sets (nothing is downloaded for them):
+#    IPS_DDR_DIR=/data/DDR-dataset IPS_RSNA_DIR=/data/rsna-pneumonia-processed-dataset \
+#        sbatch run-ips-suite-v3.sh ddr_ips66
+#  or write the two folders in DDR_DIR_USER / RSNA_DIR_USER below.
+#
 #  A finished run is skipped, an interrupted run resumes at its last epoch:
 #  resubmitting the same command is always safe.
 #
@@ -66,6 +71,18 @@ DATASETS=(
     "samriddhibagchi/ddr-dataset-credits-to-authors"
     "iamtapendu/rsna-pneumonia-processed-dataset"
 )
+
+# Your own copy of a data set: put its folder here (or give it on the command
+# line: IPS_DDR_DIR=/data/DDR-dataset sbatch run-ips-suite-v3.sh ...).
+# Left empty, the copy under ips-project/data/datasets/ is used, and
+# downloaded from Kaggle if it is missing.
+#   DDR : the folder that contains DR_grading/ (and lesion_segmentation/)
+#   RSNA: the folder that contains stage2_train_metadata.csv and Training/
+DDR_DIR_USER="${IPS_DDR_DIR:-}"
+RSNA_DIR_USER="${IPS_RSNA_DIR:-}"
+# relative paths are taken from the folder where the job is launched
+[ -n "$DDR_DIR_USER" ]  && DDR_DIR_USER="$(realpath -m "$DDR_DIR_USER")"
+[ -n "$RSNA_DIR_USER" ] && RSNA_DIR_USER="$(realpath -m "$RSNA_DIR_USER")"
 
 RUN_NAME="${1:-core}"      # run names and/or group names, comma separated
 TAG=$(printf '%s' "${RUN_NAME:-all}" | tr ',' '+' | cut -c1-50)
@@ -186,6 +203,19 @@ python -c "import six" 2>/dev/null || pip install --quiet six
 echo "[CHECK] Vérification des datasets..."
 for SLUG in "${DATASETS[@]}"; do
     DEST="data/datasets/$SLUG"
+    case "$SLUG" in
+        *ddr*)  OWN="$DDR_DIR_USER" ;;
+        *rsna*) OWN="$RSNA_DIR_USER" ;;
+        *)      OWN="" ;;
+    esac
+    if [ -n "$OWN" ]; then
+        if [ -d "$OWN" ]; then
+            echo "  [OK]      $SLUG : your copy, $OWN"
+            continue
+        fi
+        echo "  [ERROR]   $SLUG : folder not found: $OWN"
+        exit 1
+    fi
     if [ -d "$DEST" ] && [ "$(ls -A "$DEST" 2>/dev/null)" ]; then
         echo "  [OK]      $SLUG"
     else
@@ -267,8 +297,8 @@ PYEOF
 # =============================================================================
 export IPS_WORK="$(pwd)/outputs"
 export IPS_RESULTS="$(pwd)/results/$NOTEBOOK_NAME"
-export IPS_DDR_DIR="$(pwd)/data/datasets/samriddhibagchi/ddr-dataset-credits-to-authors/DDR-dataset"
-export IPS_RSNA_DIR="$(pwd)/data/datasets/iamtapendu/rsna-pneumonia-processed-dataset"
+export IPS_DDR_DIR="${DDR_DIR_USER:-$(pwd)/data/datasets/samriddhibagchi/ddr-dataset-credits-to-authors/DDR-dataset}"
+export IPS_RSNA_DIR="${RSNA_DIR_USER:-$(pwd)/data/datasets/iamtapendu/rsna-pneumonia-processed-dataset}"
 export IPS_RUNS="$RUN_NAME"
 export IPS_EPOCHS="${IPS_EPOCHS:-}"
 export IPS_MODE="${IPS_MODE:-train}"
