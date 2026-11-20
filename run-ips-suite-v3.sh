@@ -241,11 +241,15 @@ echo "[LOCK] Relâché."
 SCRIPT_PY="_run_${NOTEBOOK_NAME}_${TAG}_s${IPS_SEEDS:-42}_${SLURM_JOB_ID:-local}_$$.py"
 
 echo "[CONVERT] Notebook → script Python..."
+# --to python, not --to script: a notebook saved by Kaggle has an empty
+# language name, and --to script then writes a .txt file instead of a .py.
 jupyter nbconvert \
-    --to script \
+    --to python \
     --output "${SCRIPT_PY%.py}" \
     --output-dir "." \
     "$SCRIPT_DIR/$NOTEBOOK"
+[ -f "$SCRIPT_PY" ] || { [ -f "${SCRIPT_PY%.py}.txt" ] && mv "${SCRIPT_PY%.py}.txt" "$SCRIPT_PY"; }
+[ -f "$SCRIPT_PY" ] || { echo "[ERROR] conversion failed: $SCRIPT_PY not written"; exit 1; }
 
 echo "[OK] Script généré : $SCRIPT_PY"
 
