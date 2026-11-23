@@ -8,10 +8,15 @@ below is something the code does; section 9 lists what it does not do.
 |                                    | Train        | Validation (chooses the epoch) | Test (the reported score)             |
 | ---------------------------------- | ------------ | ------------------------------ | ------------------------------------- |
 | DDR, 5 grades, ungradable excluded | 6 260        | 2 503                          | 3 759 (official split)                |
-| RSNA, pneumonia yes / no           | about 18 700 | about 4 000                    | about 4 000 (70 / 15 / 15 by patient) |
+| RSNA, opacity against normal       | about 10 400 | about 2 200                    | about 2 200 (70 / 15 / 15 by patient) |
 
 - DDR images are cropped to the retina (square pixels, no black margin), then
   resized to 896 px (1792 px for `hires`). RSNA images are used at 1024 px.
+- RSNA keeps 14 863 of the 26 684 patients: 6 012 "Lung Opacity" (positive)
+  and 8 851 "Normal" (negative), so about 40 % positives. The 11 821 patients
+  of the third class, "No Lung Opacity / Not Normal", are excluded from every
+  split (decision of 23 November). Exact counts are printed at the start of
+  every RSNA run.
 - Decoded images are cached once on disk and shared by all jobs.
 - DDR training images are augmented on the GPU (flips, rotation up to 15°,
   colour jitter), drawn independently for each image.
