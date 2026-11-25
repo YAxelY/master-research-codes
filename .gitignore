@@ -1,0 +1,13 @@
+# Heavy or machine-specific files written by the cluster jobs: never pushed.
+# Only ips-project/results/ and ips-project/logs/ are meant to be shared.
+ips-project/artifacts/
+ips-project/backbone_cache/
+ips-project/ips-project/
+ips-project/cache/
+ips-project/outputs/
+ips-project/data/
+ips-project/_run_*.py
+ips-project/.stamp_*
+*.pt
+*.pth
+*.ckpt
