@@ -35,14 +35,24 @@
 #  splits at 896 px, about 15 GB more at 1792 px); the others wait for it and
 #  reuse it.
 #
-#  Outputs, under ips-project/results/ips-suite-v3/ : ONE FOLDER PER
-#  CONFIGURATION (every seed of that configuration inside it):
-#      <configuration>/checkpoints/   <run>_weights.pt  (best epoch on validation)
+#  Outputs. ONE FOLDER PER CONFIGURATION (every seed inside it), split in two:
+#
+#  ips-project/results/ips-suite-v3/      LIGHT, the only folder to push
 #      <configuration>/experiments/   <run>_result.json, lesion and Grad-CAM tables
 #      <configuration>/history/       <run>_history.json, codecarbon/
-#      <configuration>/predictions/   <run>_val.npz, <run>_test.npz  (per image)
-#      <configuration>/saliency/      <run>_gradcam_test.npz  (Grad-CAM maps)
+#      <configuration>/predictions/   <run>_val.npz, <run>_test.npz  (per image, small)
 #      _bench/experiments/bench.csv   (IPS_MODE=bench)
+#  ips-project/artifacts/ips-suite-v3/    HEAVY, never pushed (IPS_ARTIFACTS)
+#      <configuration>/checkpoints/   <run>_weights.pt, resume state
+#      <configuration>/saliency/      <run>_gradcam_test.npz  (about 75 MB per run)
+#
+#  Also never pushed (all listed in .gitignore): ips-project/cache/ (decoded
+#  images, up to 33 GB), ips-project/backbone_cache/ (ImageNet weights),
+#  ips-project/outputs/, ips-project/data/, the generated _run_*.py.
+#  To push the results of a job:
+#      git add ips-project/results ips-project/logs && git commit && git push
+#  To free the image cache once every DDR and RSNA job is finished:
+#      rm -f ips-project/cache/*.npy
 #  Then:  python aggregate-ips-suite-v3.py ips-project/results/ips-suite-v3
 # =============================================================================
 
@@ -93,7 +103,7 @@ TAG=$(printf '%s' "${RUN_NAME:-all}" | tr ',' '+' | cut -c1-50)
 WORK_DIR="ips-project"
 DATA_ROOT="$WORK_DIR/data/datasets"
 WORK_KAGGLE="$WORK_DIR/outputs"
-BACKBONE_CACHE="$WORK_DIR/backbone_cache"
+BACKBONE_CACHE="$(pwd)/$WORK_DIR/backbone_cache"   # absolute: the job cds into $WORK_DIR
 
 NOTEBOOK_NAME="${NOTEBOOK%.ipynb}"
 RESULTS_DIR="$WORK_DIR/results/$NOTEBOOK_NAME"
@@ -301,6 +311,7 @@ PYEOF
 # =============================================================================
 export IPS_WORK="$(pwd)/outputs"
 export IPS_RESULTS="$(pwd)/results/$NOTEBOOK_NAME"
+export IPS_ARTIFACTS="${IPS_ARTIFACTS:-$(pwd)/artifacts/$NOTEBOOK_NAME}"
 export IPS_DDR_DIR="${DDR_DIR_USER:-$(pwd)/data/datasets/samriddhibagchi/ddr-dataset-credits-to-authors/DDR-dataset}"
 export IPS_RSNA_DIR="${RSNA_DIR_USER:-$(pwd)/data/datasets/iamtapendu/rsna-pneumonia-processed-dataset}"
 export IPS_RUNS="$RUN_NAME"
@@ -363,8 +374,8 @@ if [ $EXIT_CODE -eq 0 ]; then
     RD="$(pwd)/results/$NOTEBOOK_NAME"
 
     echo ""
-    echo "  Checkpoints :"
-    find "$RD" -path "*/checkpoints/*" -name "*_weights.pt" -newer "$STAMP" 2>/dev/null | sort \
+    echo "  Checkpoints (in $IPS_ARTIFACTS, not to push) :"
+    find "$IPS_ARTIFACTS" -path "*/checkpoints/*" -name "*_weights.pt" -newer "$STAMP" 2>/dev/null | sort \
         | while read f; do
             printf "    %-52s  %s MB\n" \
                 "$(basename "$f")" "$(du -m "$f" | cut -f1)"
@@ -384,6 +395,8 @@ PYEOF2
     echo ""
     echo "  Other files written by this job :"
     find "$RD" -type f -newer "$STAMP" 2>/dev/null | wc -l
+    echo ""
+    echo "  To push only the results:  git add ips-project/results ips-project/logs"
 
 else
     echo ""
