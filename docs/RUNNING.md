@@ -91,6 +91,17 @@ of the notebook.
 
 ## Reporting results
 
+Every number that leaves this repository (a table, a slide, a message, a
+paper) is computed by a script from the raw result files: the result JSONs,
+the per-image predictions, the histories. Never retyped, never computed by
+hand or by an assistant from a summary. The script is
+`aggregate-ips-suite-v3.py` (tables in `_aggregate/`), or a dedicated script
+kept next to the document it feeds (for example the `make-data.py` of a
+presentation). Quote the output file and the code commit with the number.
+The aggregation recomputes each stored test score from the predictions and
+warns when they differ. Its tests: `python -m pytest tests`.
+
+
 - Say where each number comes from: the `setup` column of the aggregate
   (for example `kaggle/Tesla T4`, `slurm/NVIDIA A40`).
 - Scores are comparable across setups when the split hashes are equal.

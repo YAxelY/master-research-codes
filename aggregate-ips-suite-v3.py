@@ -22,6 +22,9 @@ Scores of runs on the same split hashes are comparable whatever the setup;
 time and memory are comparable only within one GPU type. tables.md lists the
 setups and warns when a table or a pair mixes them. Runs made before suite
 v3.1 have no setup record and show `unrecorded`.
+
+Every test score stored in a result file is recomputed from the per-image
+predictions (`test_from_predictions`); a difference is reported as a warning.
 """
 import sys, re, json, argparse
 from pathlib import Path
@@ -188,8 +191,10 @@ def main():
                         row[f'les_{typ}_x'] = les[typ]['enrichment']
                         row[f'les_{typ}_hit'] = les[typ]['hit_rate']
         pr = load_pred(root, r['run_name'])
-        if pr is not None and a.boot:
-            row['ci_lo'], row['ci_hi'] = boot(pr[0], pr[1], task, a.boot, rng)
+        if pr is not None:
+            row['test_from_predictions'] = score(pr[0], pr[1], task)
+            if a.boot:
+                row['ci_lo'], row['ci_hi'] = boot(pr[0], pr[1], task, a.boot, rng)
         rows.append(row)
     if not rows:
         sys.exit(f"no */experiments/*_result.json in {root}")
@@ -278,6 +283,11 @@ def main():
             if len(h) > 1:
                 warn.append(f"{ds.upper()}: {len(h)} different `{col}` hashes: some runs did "
                             f"not use the same images; their scores are NOT comparable.")
+    if 'test_from_predictions' in runs:
+        gap = (runs.test - runs.test_from_predictions).abs()
+        for _, r in runs[gap > 1e-4].iterrows():
+            warn.append(f"{r.run}: the stored test score {r.test:.4f} differs from the one "
+                        f"recomputed from its predictions ({r.test_from_predictions:.4f}).")
     if warn:
         txt += "\n**Warnings**\n\n" + "\n".join(f"- {w}" for w in warn) + "\n"
     for ds in cr.dataset.unique():

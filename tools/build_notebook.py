@@ -71,6 +71,8 @@ PACKAGE_DOC = """## The code: package `ips_suite`
 Each cell writes one file of the package (generated, do not edit here)."""
 
 SUBPACKAGES = ('config', 'data', 'models', 'training', 'evaluation')
+INSTALL = "%pip install -q codecarbon\n"
+
 MAKE_FOLDERS = ("import os\n\nfor folder in " + repr(SUBPACKAGES) + ":\n"
                 "    os.makedirs(f'ips_suite/{folder}', exist_ok=True)\n")
 
@@ -123,7 +125,7 @@ def notebook():
                          for p in PACKAGE.rglob('*.py')) - set(MODULE_ORDER))
     if missing:
         sys.exit(f"modules missing from MODULE_ORDER: {missing}")
-    cells = [markdown(INTRO), markdown(SETTINGS_DOC), code(SETTINGS),
+    cells = [markdown(INTRO), markdown(SETTINGS_DOC), code(SETTINGS), code(INSTALL),
              markdown(PACKAGE_DOC), code(MAKE_FOLDERS)]
     cells += [module_cell(name) for name in MODULE_ORDER]
     cells += [markdown(RUN_DOC), code(RUN)]
