@@ -7,7 +7,8 @@
 
 A profile is a folder ~/.config/ips-suite/kaggle/<profile>/ for one person's
 Kaggle account, holding either kaggle.json, or an API token in `access_token`
-with the account name in `username`. See docs/RUNNING.md.
+with the account name in `username`. Instead of a profile, --env-file reads
+KAGGLE_USERNAME and KAGGLE_API_TOKEN from a .env file. See docs/RUNNING.md.
 """
 import argparse
 import json
@@ -16,6 +17,9 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
+from envfile import read_env_file  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
 NOTEBOOK = REPO / 'ips-suite-v3.ipynb'
@@ -40,6 +44,18 @@ class Profile:
         else:
             sys.exit(f"no credentials in {self.path}: put kaggle.json there, or "
                      f"access_token and username")
+
+    @classmethod
+    def from_env_file(cls, path):
+        values = read_env_file(path)
+        missing = [k for k in ('KAGGLE_USERNAME', 'KAGGLE_API_TOKEN') if not values.get(k)]
+        if missing:
+            sys.exit(f"{path} lacks {', '.join(missing)}")
+        profile = cls.__new__(cls)
+        profile.path = Path(path)
+        profile.username = values['KAGGLE_USERNAME']
+        profile.env = {'KAGGLE_API_TOKEN': values['KAGGLE_API_TOKEN']}
+        return profile
 
     def run(self, *args):
         env = {k: v for k, v in os.environ.items()
@@ -102,7 +118,7 @@ def launch(args):
         sys.exit("src/ or the notebook has uncommitted changes: commit them, so that "
                  "the results can name the exact code (or pass --allow-dirty)")
     commit += '-dirty' if dirty else ''
-    profile = Profile(args.profile)
+    profile = load_profile(args)
     user, slug = profile.username, args.slug
     with tempfile.TemporaryDirectory() as folder:
         folder = Path(folder)
@@ -121,14 +137,20 @@ def launch(args):
         return profile.run(*push).returncode
 
 
+def load_profile(args):
+    return Profile.from_env_file(args.env_file) if args.env_file else Profile(args.profile)
+
+
 def status(args):
-    profile = Profile(args.profile)
+    profile = load_profile(args)
     return profile.run('kernels', 'status', f"{profile.username}/{args.slug}").returncode
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument('--profile', required=True)
+    who = ap.add_mutually_exclusive_group(required=True)
+    who.add_argument('--profile')
+    who.add_argument('--env-file', help=".env with KAGGLE_USERNAME and KAGGLE_API_TOKEN")
     ap.add_argument('--runs', help="run or group names, comma separated")
     ap.add_argument('--seeds', default='42')
     ap.add_argument('--epochs', type=int, default=50)

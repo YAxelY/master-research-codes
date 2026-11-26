@@ -10,8 +10,12 @@ that aggregate-ips-suite-v3.py reads. --squash drops the upload history of
 the repository (old resume states), to be used when no run is in progress.
 """
 import argparse
+import os
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
+from envfile import read_env_file  # noqa: E402
 
 SUITE = 'ips-suite-v3'
 
@@ -39,7 +43,10 @@ def main():
     ap.add_argument('--to', type=Path, default=Path('hub-results'))
     ap.add_argument('--artifacts', action='store_true', help="also weights and Grad-CAM maps")
     ap.add_argument('--squash', action='store_true')
+    ap.add_argument('--env-file', help=".env with HF_TOKEN")
     args = ap.parse_args()
+    if args.env_file:
+        os.environ.setdefault('HF_TOKEN', read_env_file(args.env_file).get('HF_TOKEN', ''))
     if args.squash:
         squash(args.hub)
     else:
