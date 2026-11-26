@@ -10,6 +10,7 @@ from collections import defaultdict
 from pathlib import Path
 from sklearn.metrics import roc_auc_score
 
+from ips_suite.config.environment import device
 from ips_suite.models.batching import _embed_single
 from ips_suite.training.epoch import IMAGE_MODELS
 from ips_suite.config import experiments

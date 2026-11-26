@@ -13,6 +13,8 @@ import json
 import sys
 from pathlib import Path
 
+from check_names import check as undefined_names
+
 REPO = Path(__file__).resolve().parents[1]
 PACKAGE = REPO / 'src' / 'ips_suite'
 NOTEBOOK = REPO / 'ips-suite-v3.ipynb'
@@ -106,7 +108,17 @@ def module_cell(name):
     return code(f"%%writefile ips_suite/{name}.py\n{source}")
 
 
+def assert_no_undefined_names():
+    problems = [(path, scope, name) for path in sorted(PACKAGE.rglob('*.py'))
+                for scope, name in undefined_names(path)]
+    for path, scope, name in problems:
+        print(f"{path.relative_to(REPO)}: {scope} reads undefined name {name}")
+    if problems:
+        sys.exit("fix the undefined names before building the notebook")
+
+
 def notebook():
+    assert_no_undefined_names()
     missing = sorted(set(p.relative_to(PACKAGE).with_suffix('').as_posix()
                          for p in PACKAGE.rglob('*.py')) - set(MODULE_ORDER))
     if missing:

@@ -4,6 +4,7 @@ import numpy as np
 import torch
 
 from ips_suite.data.datasets import build_loader
+from ips_suite.config.environment import device
 from ips_suite.models.batching import _embed_single
 from ips_suite.models.cascade import HMSIPSNet
 from ips_suite.models.reference import BaselineNet, MILNet
