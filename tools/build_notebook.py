@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Write ips-suite-v3.ipynb from the package in src/ips_suite/.
+"""Write the two Kaggle notebooks from the package in src/ips_suite/.
 
-    python tools/build_notebook.py           # rewrite the notebook
-    python tools/build_notebook.py --check   # exit 1 if the notebook is out of date
+    python tools/build_notebook.py           # rewrite the notebooks
+    python tools/build_notebook.py --check   # exit 1 if a notebook is out of date
 
-The package is the only source of the code. The notebook holds one
-%%writefile cell per module, so Kaggle shows the same files, and a last cell
-that runs the package: both ways run the very same code.
+ips-suite-v3.ipynb trains: one %%writefile cell per module of the package and
+a cell that runs it. ips-suite-v3-analysis.ipynb runs one analysis of
+analysis/registry.json on results stored on the Hugging Face Hub. The package
+and the analysis scripts are the only source of the code.
 """
 import argparse
 import json
@@ -18,6 +19,8 @@ from check_names import check as undefined_names
 REPO = Path(__file__).resolve().parents[1]
 PACKAGE = REPO / 'src' / 'ips_suite'
 NOTEBOOK = REPO / 'ips-suite-v3.ipynb'
+ANALYSIS_NOTEBOOK = REPO / 'ips-suite-v3-analysis.ipynb'
+ANALYSIS_FILES = ['aggregate-ips-suite-v3.py', 'analysis/registry.json', 'analysis/run_analysis.py']
 MODULE_ORDER = [
     '__init__',
     'config/__init__', 'config/environment', 'config/experiments',
@@ -90,6 +93,36 @@ main()
 """
 
 
+ANALYSIS_INTRO = """# IPS suite v3: analysis
+
+Runs one analysis of `analysis/registry.json` where the results are: it
+downloads from the Hugging Face Hub only what the analysis needs, runs it, and
+uploads its outputs to `ips-suite-v3/analysis/<tag>/`. **Generated** by
+`tools/build_notebook.py`; only the settings cell is meant to change here."""
+
+ANALYSIS_SETTINGS = """import os
+import time
+
+ON_KAGGLE = 'KAGGLE_KERNEL_RUN_TYPE' in os.environ
+if ON_KAGGLE:
+    os.environ['IPS_ANALYSIS'] = 'aggregate'
+    os.environ['IPS_HUB_REPO'] = '<hf-user>/ips-suite-runs'
+    os.environ['IPS_ANALYSIS_TAG'] = time.strftime('%Y-%m-%d_%H%M') + '_aggregate'
+print({k: v for k, v in os.environ.items() if k.startswith('IPS_')})
+"""
+
+ANALYSIS_FOLDERS = ("import os\n\nfor folder in "
+                    + repr(tuple(f"ips_suite/{name}" for name in SUBPACKAGES) + ('analysis',))
+                    + ":\n    os.makedirs(folder, exist_ok=True)\n")
+
+ANALYSIS_RUN = """import runpy
+import sys
+
+sys.path.insert(0, os.getcwd())
+runpy.run_path('analysis/run_analysis.py', run_name='__main__')
+"""
+
+
 def markdown(text):
     return {'cell_type': 'markdown', 'metadata': {}, 'source': text.splitlines(keepends=True)}
 
@@ -119,21 +152,44 @@ def assert_no_undefined_names():
         sys.exit("fix the undefined names before building the notebook")
 
 
-def notebook():
+def repository_file_cell(relative):
+    return code(f"%%writefile {relative}\n{(REPO / relative).read_text()}")
+
+
+def package_cells():
     assert_no_undefined_names()
     missing = sorted(set(p.relative_to(PACKAGE).with_suffix('').as_posix()
                          for p in PACKAGE.rglob('*.py')) - set(MODULE_ORDER))
     if missing:
         sys.exit(f"modules missing from MODULE_ORDER: {missing}")
-    cells = [markdown(INTRO), markdown(SETTINGS_DOC), code(SETTINGS), code(INSTALL),
-             markdown(PACKAGE_DOC), code(MAKE_FOLDERS)]
-    cells += [module_cell(name) for name in MODULE_ORDER]
-    cells += [markdown(RUN_DOC), code(RUN)]
+    return [module_cell(name) for name in MODULE_ORDER]
+
+
+def as_notebook(cells):
     return {'cells': with_ids(cells),
             'metadata': {'kernelspec': {'display_name': 'Python 3', 'language': 'python',
                                         'name': 'python3'},
                          'language_info': {'name': 'python'}},
             'nbformat': 4, 'nbformat_minor': 5}
+
+
+def notebook():
+    cells = [markdown(INTRO), markdown(SETTINGS_DOC), code(SETTINGS), code(INSTALL),
+             markdown(PACKAGE_DOC), code(MAKE_FOLDERS)]
+    cells += package_cells()
+    cells += [markdown(RUN_DOC), code(RUN)]
+    return as_notebook(cells)
+
+
+def analysis_notebook():
+    cells = [markdown(ANALYSIS_INTRO), code(ANALYSIS_SETTINGS), code(ANALYSIS_FOLDERS)]
+    cells += package_cells()
+    cells += [repository_file_cell(f) for f in ANALYSIS_FILES]
+    cells += [code(ANALYSIS_RUN)]
+    return as_notebook(cells)
+
+
+NOTEBOOKS = {NOTEBOOK: notebook, ANALYSIS_NOTEBOOK: analysis_notebook}
 
 
 def code_of(nb):
@@ -144,16 +200,21 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument('--check', action='store_true')
     args = ap.parse_args()
-    built = notebook()
+    stale = []
+    for path, build in NOTEBOOKS.items():
+        built = build()
+        if args.check:
+            if not path.exists() or code_of(json.loads(path.read_text())) != code_of(built):
+                stale.append(path.name)
+            continue
+        path.write_text(json.dumps(built, indent=1, ensure_ascii=False) + '\n')
+        print(f"wrote {path.name}: {len(built['cells'])} cells")
     if args.check:
-        current = json.loads(NOTEBOOK.read_text())
-        if code_of(current) != code_of(built):
-            print(f"{NOTEBOOK.name} is out of date: run python tools/build_notebook.py")
-            return 1
-        print(f"{NOTEBOOK.name} matches src/ips_suite")
-        return 0
-    NOTEBOOK.write_text(json.dumps(built, indent=1, ensure_ascii=False) + '\n')
-    print(f"wrote {NOTEBOOK.name}: {len(built['cells'])} cells")
+        for name in stale:
+            print(f"{name} is out of date: run python tools/build_notebook.py")
+        if not stale:
+            print("the notebooks match src/ and analysis/")
+        return 1 if stale else 0
     return 0
 
 

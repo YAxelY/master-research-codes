@@ -172,8 +172,40 @@ def test_package_has_no_undefined_names():
     assert problems == []
 
 
-def test_notebook_matches_package():
+def test_notebooks_match_the_code():
     sys.path.insert(0, str(REPO / 'tools'))
     build = load('build_notebook', REPO / 'tools' / 'build_notebook.py')
-    current = json.loads((REPO / 'ips-suite-v3.ipynb').read_text())
-    assert build.code_of(current) == build.code_of(build.notebook())
+    for path, make in build.NOTEBOOKS.items():
+        assert build.code_of(json.loads(path.read_text())) == build.code_of(make()), path.name
+
+
+def test_analysis_registry_commands():
+    run_analysis = load('run_analysis', REPO / 'analysis' / 'run_analysis.py')
+    registry = run_analysis.load_registry()
+    assert 'aggregate' in registry
+    paths = {'python': 'py', 'results': '/r', 'artifacts': '/a', 'out': '/o'}
+    for name, spec in registry.items():
+        assert set(spec['needs']) <= {'results', 'artifacts'}, name
+        assert '{' not in ' '.join(run_analysis.command_for(spec, paths)), name
+        assert '{' not in run_analysis.fill(spec['outputs'], paths), name
+    assert run_analysis.hub_patterns(['results']) == ['ips-suite-v3/results/**']
+    assert run_analysis.command_for(registry['aggregate'], paths)[:3] == \
+        ['py', 'aggregate-ips-suite-v3.py', '/r']
+
+
+def test_launcher_analysis_notebook_and_metadata():
+    launch = load('launch', REPO / 'kaggle' / 'launch.py')
+    cell = launch.analysis_settings_cell('aggregate', 'me/runs', '2026-11-26_1200_aggregate', 'abc')
+    nb = launch.notebook_with_settings(cell, launch.ANALYSIS_NOTEBOOK)
+    settings = [''.join(c['source']) for c in nb['cells'] if launch.SETTINGS_MARKER in ''.join(c['source'])]
+    assert len(settings) == 1 and "'IPS_ANALYSIS'] = 'aggregate'" in settings[0]
+    meta = launch.kernel_metadata('me', launch.ANALYSIS_SLUG, launch.ANALYSIS_NOTEBOOK.name,
+                                  gpu=False, datasets=False)
+    assert meta['dataset_sources'] == ['me/ips-suite-hub-token'] and meta['enable_gpu'] is False
+
+
+def test_pull_patterns():
+    pull = load('pull_results', REPO / 'hub' / 'pull_results.py')
+    assert pull.patterns_for(False, None) == ['ips-suite-v3/results/**']
+    assert pull.patterns_for(False, 'all') == ['ips-suite-v3/analysis/**']
+    assert pull.patterns_for(True, 'x') == ['ips-suite-v3/analysis/x/**']

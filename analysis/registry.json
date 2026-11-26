@@ -1,0 +1,10 @@
+{
+  "aggregate": {
+    "description": "tables, confidence intervals, paired comparisons, setup checks",
+    "needs": ["results"],
+    "gpu": false,
+    "datasets": false,
+    "command": ["{python}", "aggregate-ips-suite-v3.py", "{results}", "--boot", "2000"],
+    "outputs": "{results}/_aggregate"
+  }
+}
