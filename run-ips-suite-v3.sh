@@ -206,6 +206,7 @@ else
 fi
 # the kaggle client imports six without declaring it: an existing venv may lack it
 python -c "import six" 2>/dev/null || pip install --quiet six
+[ -n "${IPS_HUB_REPO:-}" ] && { python -c "import huggingface_hub" 2>/dev/null || pip install --quiet huggingface_hub; }
 
 # =============================================================================
 #  Téléchargement des datasets manquants
@@ -322,6 +323,7 @@ export IPS_CACHE_DIR="${IPS_CACHE_DIR:-$(pwd)/cache}"
 export IPS_CACHE="${IPS_CACHE:-ddr}"
 export IPS_WORKERS="${IPS_WORKERS:-12}"
 export IPS_V2_CKPT="${IPS_V2_CKPT:-$(pwd)/results/ips-suite/checkpoints}"
+export IPS_CODE_COMMIT="${IPS_CODE_COMMIT:-$(git -C "$SCRIPT_DIR" rev-parse --short HEAD 2>/dev/null)}"
 export IPS_FORCE="${IPS_FORCE:-0}"
 export IPS_DDR_GEOMETRY="${IPS_DDR_GEOMETRY:-retina}"    # retina | stretch (v2 input) | crop
 

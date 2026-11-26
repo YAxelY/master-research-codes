@@ -11,3 +11,7 @@ ips-project/.stamp_*
 *.pt
 *.pth
 *.ckpt
+
+# Results brought back from the Hugging Face Hub
+hub-results/
+__pycache__/
