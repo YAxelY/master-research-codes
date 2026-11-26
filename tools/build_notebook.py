@@ -95,8 +95,14 @@ def code(text):
             'source': text.splitlines(keepends=True)}
 
 
+def with_ids(cells):
+    return [{'id': f"cell-{n:02d}", **cell} for n, cell in enumerate(cells)]
+
+
 def module_cell(name):
     source = (PACKAGE / f"{name}.py").read_text()
+    if not source.strip():
+        sys.exit(f"{name}.py is empty: %%writefile needs content (a docstring is enough)")
     return code(f"%%writefile ips_suite/{name}.py\n{source}")
 
 
@@ -109,7 +115,7 @@ def notebook():
              markdown(PACKAGE_DOC), code(MAKE_FOLDERS)]
     cells += [module_cell(name) for name in MODULE_ORDER]
     cells += [markdown(RUN_DOC), code(RUN)]
-    return {'cells': cells,
+    return {'cells': with_ids(cells),
             'metadata': {'kernelspec': {'display_name': 'Python 3', 'language': 'python',
                                         'name': 'python3'},
                          'language_info': {'name': 'python'}},
