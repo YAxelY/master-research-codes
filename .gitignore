@@ -15,3 +15,6 @@ ips-project/.stamp_*
 # Results brought back from the Hugging Face Hub
 hub-results/
 __pycache__/
+
+# Local credentials (never committed)
+.env

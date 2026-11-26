@@ -9,10 +9,24 @@ a table without saying so (the aggregation script lists them and warns).
 
 1. A Hugging Face account and a token with *write* access
    (huggingface.co, Settings, Access Tokens).
-2. On Kaggle: a verified phone number (needed for GPU and internet), then in
-   any notebook: Add-ons, Secrets, add `HF_TOKEN` with the token.
-3. On your machine: download the account's `kaggle.json` (Kaggle, Settings,
-   API, Create New Token) to `~/.config/ips-suite/kaggle/<name>/kaggle.json`.
+2. On Kaggle: a verified phone number (needed for GPU and internet), and the
+   Hugging Face token as a secret named `HF_TOKEN` (in a notebook: Add-ons,
+   Secrets). After the first launch, open the notebook `ips-suite-v3-runner`
+   on Kaggle once and tick `HF_TOKEN` in Add-ons, Secrets, so that it is
+   attached to that notebook.
+3. On your machine, the Kaggle credentials in a profile folder
+   `~/.config/ips-suite/kaggle/<name>/`, either the downloaded `kaggle.json`,
+   or a new API token in a file `access_token` with the account name in a file
+   `username`. Type the token in your own terminal, never in a chat:
+
+   ```sh
+   mkdir -p ~/.config/ips-suite/kaggle/axel && chmod 700 ~/.config/ips-suite
+   read -rs T && printf '%s' "$T" > ~/.config/ips-suite/kaggle/axel/access_token && unset T
+   echo '<kaggle-username>' > ~/.config/ips-suite/kaggle/axel/username
+   chmod 600 ~/.config/ips-suite/kaggle/axel/*
+   ```
+4. On your machine, the Hugging Face token for pulling results:
+   `hf auth login` (or `export HF_TOKEN=...` in your shell profile).
 
 Kaggle allows **one account per person**. Several accounts are fine when each
 belongs to a different person (you, a co-author, a supervisor) who agreed to

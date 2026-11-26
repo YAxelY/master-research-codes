@@ -5,11 +5,11 @@
         --hub <hf-user>/ips-suite-runs --epochs 50
     python kaggle/launch.py --profile axel --status
 
-A profile is a folder ~/.config/ips-suite/kaggle/<profile>/ holding the
-kaggle.json of one person's Kaggle account. See docs/RUNNING.md.
+A profile is a folder ~/.config/ips-suite/kaggle/<profile>/ for one person's
+Kaggle account, holding either kaggle.json, or an API token in `access_token`
+with the account name in `username`. See docs/RUNNING.md.
 """
 import argparse
-import hashlib
 import json
 import os
 import subprocess
@@ -25,15 +25,26 @@ DATASETS = ['samriddhibagchi/ddr-dataset-credits-to-authors',
 SETTINGS_MARKER = "ON_KAGGLE = 'KAGGLE_KERNEL_RUN_TYPE' in os.environ"
 
 
-def profile_dir(profile):
-    path = PROFILES / profile
-    if not (path / 'kaggle.json').is_file():
-        sys.exit(f"no Kaggle credentials at {path / 'kaggle.json'}")
-    return path
+class Profile:
 
+    def __init__(self, name):
+        self.path = PROFILES / name
+        legacy, token, user = (self.path / 'kaggle.json', self.path / 'access_token',
+                               self.path / 'username')
+        if legacy.is_file():
+            self.username = json.loads(legacy.read_text())['username']
+            self.env = {'KAGGLE_CONFIG_DIR': str(self.path)}
+        elif token.is_file() and user.is_file():
+            self.username = user.read_text().strip()
+            self.env = {'KAGGLE_API_TOKEN': str(token)}
+        else:
+            sys.exit(f"no credentials in {self.path}: put kaggle.json there, or "
+                     f"access_token and username")
 
-def kaggle_user(profile):
-    return json.loads((profile_dir(profile) / 'kaggle.json').read_text())['username']
+    def run(self, *args):
+        env = {k: v for k, v in os.environ.items()
+               if k not in ('KAGGLE_API_TOKEN', 'KAGGLE_CONFIG_DIR')}
+        return subprocess.run(['kaggle', *args], env={**env, **self.env}, text=True)
 
 
 def code_commit():
@@ -49,11 +60,6 @@ def notebook_is_current():
     check = subprocess.run([sys.executable, str(REPO / 'tools' / 'build_notebook.py'), '--check'],
                            capture_output=True, text=True)
     return check.returncode == 0
-
-
-def kernel_slug(runs, seeds, smoke):
-    digest = hashlib.sha1(f"{runs}|{seeds}|{smoke}".encode()).hexdigest()[:8]
-    return f"ips-suite-v3-{digest}"
 
 
 def settings_cell(args, commit):
@@ -88,11 +94,6 @@ def kernel_metadata(user, slug):
     }
 
 
-def kaggle(profile, *args):
-    env = {**os.environ, 'KAGGLE_CONFIG_DIR': str(profile_dir(profile))}
-    return subprocess.run(['kaggle', *args], env=env, text=True)
-
-
 def launch(args):
     if not notebook_is_current():
         sys.exit("the notebook does not match src/ips_suite: run python tools/build_notebook.py")
@@ -101,7 +102,8 @@ def launch(args):
         sys.exit("src/ or the notebook has uncommitted changes: commit them, so that "
                  "the results can name the exact code (or pass --allow-dirty)")
     commit += '-dirty' if dirty else ''
-    user, slug = kaggle_user(args.profile), kernel_slug(args.runs, args.seeds, args.smoke)
+    profile = Profile(args.profile)
+    user, slug = profile.username, args.slug
     with tempfile.TemporaryDirectory() as folder:
         folder = Path(folder)
         nb = notebook_with_settings(settings_cell(args, commit))
@@ -116,11 +118,12 @@ def launch(args):
         push = ['kernels', 'push', '-p', str(folder)]
         if args.accelerator:
             push += ['--accelerator', args.accelerator]
-        return kaggle(args.profile, *push).returncode
+        return profile.run(*push).returncode
 
 
 def status(args):
-    return kaggle(args.profile, 'kernels', 'list', '--mine', '--search', 'ips-suite-v3').returncode
+    profile = Profile(args.profile)
+    return profile.run('kernels', 'status', f"{profile.username}/{args.slug}").returncode
 
 
 def main():
@@ -133,6 +136,8 @@ def main():
     ap.add_argument('--hub', help="Hugging Face dataset repo, <user>/<name>")
     ap.add_argument('--hub-every', type=int, default=2)
     ap.add_argument('--accelerator', help="passed to kaggle kernels push")
+    ap.add_argument('--slug', default='ips-suite-v3-runner',
+                    help="Kaggle notebook name; one per account keeps its attached secrets")
     ap.add_argument('--allow-dirty', action='store_true')
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--status', action='store_true')
