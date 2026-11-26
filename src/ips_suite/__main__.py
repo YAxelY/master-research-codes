@@ -26,6 +26,15 @@ def _expand(sel, table, groups=True):
 
 
 
+def _share(runs, spec):
+    if not spec:
+        return runs
+    index, count = (int(part) for part in spec.split('/'))
+    if not 0 <= index < count:
+        raise ValueError(f"IPS_SHARD={spec}: expected i/n with 0 <= i < n")
+    return runs[index::count]
+
+
 def main():
     MODE = _env('IPS_MODE', 'train')
     _sel = [k for k in _env('IPS_RUNS', 'core').split(',') if k.strip()]
@@ -60,7 +69,7 @@ def main():
                 print(f"\n[FAILED] {_k} : {_exc!r}")
                 traceback.print_exc()
     elif MODE == 'train':
-        TO_RUN = _expand(_sel, REGISTRY)
+        TO_RUN = _share(_expand(_sel, REGISTRY), _env('IPS_SHARD'))
         print(f"To run : {TO_RUN}  seeds {SEEDS}"
               + (f"  ({EPOCHS} epochs)" if EPOCHS else ""))
         _failed = []

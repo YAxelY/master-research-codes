@@ -19,3 +19,4 @@ __pycache__/
 # Local credentials (never committed)
 .env
 hugging-face-token
+accounts/

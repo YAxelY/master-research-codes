@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""Launch a share of the suite as a Kaggle notebook run ("Save & Run All").
+"""Launch the suite on one or several Kaggle accounts ("Save & Run All").
 
-    python kaggle/launch.py --profile axel --runs ddr_ms66_33,ddr_h66_33 \
-        --hub <hf-user>/ips-suite-runs --epochs 50
-    python kaggle/launch.py --profile axel --status
+    python kaggle/launch.py --env-file .env --runs ddr_ips66,rsna_ips300 --epochs 1 --smoke 200
+    python kaggle/launch.py --accounts accounts --runs focus --epochs 50
+    python kaggle/launch.py --accounts accounts --status
 
-A profile is a folder ~/.config/ips-suite/kaggle/<profile>/ for one person's
-Kaggle account, holding either kaggle.json, or an API token in `access_token`
-with the account name in `username`. Instead of a profile, --env-file reads
-KAGGLE_USERNAME and KAGGLE_API_TOKEN from a .env file. See docs/RUNNING.md.
+An account is a .env file with KAGGLE_USERNAME and KAGGLE_API_TOKEN (and
+optionally IPS_HUB_REPO, the default for --hub). With several accounts, every
+account gets the same list of runs and a different share of it (IPS_SHARD =
+i/n, applied by the package), so no run is launched twice. Each account owns
+one Kaggle notebook (--slug), relaunched as a new version. See docs/RUNNING.md.
 """
 import argparse
 import json
@@ -16,51 +17,45 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
+REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO / 'tools'))
 from envfile import read_env_file  # noqa: E402
 
-REPO = Path(__file__).resolve().parents[1]
 NOTEBOOK = REPO / 'ips-suite-v3.ipynb'
-PROFILES = Path.home() / '.config' / 'ips-suite' / 'kaggle'
+PLAN = REPO / 'kaggle' / 'last-plan.json'
 DATASETS = ['samriddhibagchi/ddr-dataset-credits-to-authors',
             'iamtapendu/rsna-pneumonia-processed-dataset']
 SETTINGS_MARKER = "ON_KAGGLE = 'KAGGLE_KERNEL_RUN_TYPE' in os.environ"
 
 
-class Profile:
+class Account:
 
-    def __init__(self, name):
-        self.path = PROFILES / name
-        legacy, token, user = (self.path / 'kaggle.json', self.path / 'access_token',
-                               self.path / 'username')
-        if legacy.is_file():
-            self.username = json.loads(legacy.read_text())['username']
-            self.env = {'KAGGLE_CONFIG_DIR': str(self.path)}
-        elif token.is_file() and user.is_file():
-            self.username = user.read_text().strip()
-            self.env = {'KAGGLE_API_TOKEN': str(token)}
-        else:
-            sys.exit(f"no credentials in {self.path}: put kaggle.json there, or "
-                     f"access_token and username")
-
-    @classmethod
-    def from_env_file(cls, path):
-        values = read_env_file(path)
+    def __init__(self, env_file):
+        values = read_env_file(env_file)
         missing = [k for k in ('KAGGLE_USERNAME', 'KAGGLE_API_TOKEN') if not values.get(k)]
         if missing:
-            sys.exit(f"{path} lacks {', '.join(missing)}")
-        profile = cls.__new__(cls)
-        profile.path = Path(path)
-        profile.username = values['KAGGLE_USERNAME']
-        profile.env = {'KAGGLE_API_TOKEN': values['KAGGLE_API_TOKEN']}
-        return profile
+            sys.exit(f"{env_file} lacks {', '.join(missing)}")
+        self.source = Path(env_file)
+        self.username = values['KAGGLE_USERNAME']
+        self.hub_repo = values.get('IPS_HUB_REPO', '')
+        self._env = {'KAGGLE_API_TOKEN': values['KAGGLE_API_TOKEN']}
 
-    def run(self, *args):
-        env = {k: v for k, v in os.environ.items()
-               if k not in ('KAGGLE_API_TOKEN', 'KAGGLE_CONFIG_DIR')}
-        return subprocess.run(['kaggle', *args], env={**env, **self.env}, text=True)
+    def kaggle(self, *args):
+        inherited = {k: v for k, v in os.environ.items()
+                     if k not in ('KAGGLE_API_TOKEN', 'KAGGLE_CONFIG_DIR')}
+        return subprocess.run(['kaggle', *args], env={**inherited, **self._env}, text=True)
+
+
+def load_accounts(args):
+    if args.env_file:
+        return [Account(args.env_file)]
+    files = sorted(Path(args.accounts).glob('*.env'))
+    if not files:
+        sys.exit(f"no *.env account file in {args.accounts}")
+    return [Account(f) for f in files]
 
 
 def code_commit():
@@ -78,13 +73,13 @@ def notebook_is_current():
     return check.returncode == 0
 
 
-def settings_cell(args, commit):
+def settings_cell(args, hub, shard, commit):
     values = {
-        'IPS_MODE': 'train', 'IPS_RUNS': args.runs, 'IPS_SEEDS': args.seeds,
-        'IPS_EPOCHS': str(args.epochs), 'IPS_SMOKE': str(args.smoke), 'IPS_WORKERS': '3',
-        'IPS_CACHE_DIR': '/kaggle/working/cache', 'IPS_DDR_GEOMETRY': 'retina',
-        'IPS_HUB_REPO': args.hub, 'IPS_HUB_EVERY': str(args.hub_every),
-        'IPS_CODE_COMMIT': commit,
+        'IPS_MODE': 'train', 'IPS_RUNS': args.runs, 'IPS_SHARD': shard,
+        'IPS_SEEDS': args.seeds, 'IPS_EPOCHS': str(args.epochs), 'IPS_SMOKE': str(args.smoke),
+        'IPS_WORKERS': '3', 'IPS_CACHE_DIR': '/kaggle/working/cache',
+        'IPS_DDR_GEOMETRY': 'retina', 'IPS_HUB_REPO': hub,
+        'IPS_HUB_EVERY': str(args.hub_every), 'IPS_CODE_COMMIT': commit,
     }
     lines = ['import os', '', SETTINGS_MARKER, 'if ON_KAGGLE:']
     lines += [f"    os.environ[{k!r}] = {v!r}" for k, v in values.items()]
@@ -110,6 +105,19 @@ def kernel_metadata(user, slug):
     }
 
 
+def push(account, args, hub, shard, commit):
+    with tempfile.TemporaryDirectory() as folder:
+        folder = Path(folder)
+        nb = notebook_with_settings(settings_cell(args, hub, shard, commit))
+        (folder / NOTEBOOK.name).write_text(json.dumps(nb, indent=1))
+        (folder / 'kernel-metadata.json').write_text(
+            json.dumps(kernel_metadata(account.username, args.slug), indent=1))
+        command = ['kernels', 'push', '-p', str(folder)]
+        if args.accelerator:
+            command += ['--accelerator', args.accelerator]
+        return account.kaggle(*command).returncode
+
+
 def launch(args):
     if not notebook_is_current():
         sys.exit("the notebook does not match src/ips_suite: run python tools/build_notebook.py")
@@ -118,56 +126,58 @@ def launch(args):
         sys.exit("src/ or the notebook has uncommitted changes: commit them, so that "
                  "the results can name the exact code (or pass --allow-dirty)")
     commit += '-dirty' if dirty else ''
-    profile = load_profile(args)
-    user, slug = profile.username, args.slug
-    with tempfile.TemporaryDirectory() as folder:
-        folder = Path(folder)
-        nb = notebook_with_settings(settings_cell(args, commit))
-        (folder / NOTEBOOK.name).write_text(json.dumps(nb, indent=1))
-        (folder / 'kernel-metadata.json').write_text(json.dumps(kernel_metadata(user, slug), indent=1))
-        print(f"{user}/{slug}: runs {args.runs}, seeds {args.seeds}, "
-              f"{args.epochs} epochs, code {commit}, hub {args.hub}"
-              + (f", code check on {args.smoke} images per split" if args.smoke else ""))
-        if args.dry_run:
-            print((folder / 'kernel-metadata.json').read_text())
-            return 0
-        push = ['kernels', 'push', '-p', str(folder)]
-        if args.accelerator:
-            push += ['--accelerator', args.accelerator]
-        return profile.run(*push).returncode
-
-
-def load_profile(args):
-    return Profile.from_env_file(args.env_file) if args.env_file else Profile(args.profile)
+    accounts = load_accounts(args)
+    hub = args.hub or accounts[0].hub_repo
+    if not hub:
+        sys.exit("no Hub repository: pass --hub or set IPS_HUB_REPO in the .env file")
+    plan = {'date': time.strftime('%Y-%m-%d %H:%M'), 'commit': commit, 'hub': hub,
+            'runs': args.runs, 'seeds': args.seeds, 'epochs': args.epochs,
+            'smoke': args.smoke, 'slug': args.slug, 'shares': {}}
+    failures = 0
+    for index, account in enumerate(accounts):
+        shard = f"{index}/{len(accounts)}" if len(accounts) > 1 else ''
+        plan['shares'][account.username] = shard or 'all'
+        print(f"{account.username}/{args.slug}: runs {args.runs}"
+              + (f" (share {shard})" if shard else '')
+              + f", seeds {args.seeds}, {args.epochs} epochs"
+              + (f", code check on {args.smoke} images per split" if args.smoke else '')
+              + f", code {commit}, hub {hub}")
+        if not args.dry_run:
+            failures += push(account, args, hub, shard, commit) != 0
+    if not args.dry_run:
+        PLAN.write_text(json.dumps(plan, indent=1))
+        print(f"plan written to {PLAN.relative_to(REPO)}")
+    return 1 if failures else 0
 
 
 def status(args):
-    profile = load_profile(args)
-    return profile.run('kernels', 'status', f"{profile.username}/{args.slug}").returncode
+    codes = [account.kaggle('kernels', 'status', f"{account.username}/{args.slug}").returncode
+             for account in load_accounts(args)]
+    return max(codes)
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     who = ap.add_mutually_exclusive_group(required=True)
-    who.add_argument('--profile')
-    who.add_argument('--env-file', help=".env with KAGGLE_USERNAME and KAGGLE_API_TOKEN")
+    who.add_argument('--env-file', help=".env of one account")
+    who.add_argument('--accounts', help="folder of <name>.env files, one per account")
     ap.add_argument('--runs', help="run or group names, comma separated")
     ap.add_argument('--seeds', default='42')
     ap.add_argument('--epochs', type=int, default=50)
     ap.add_argument('--smoke', type=int, default=0, help="images per split for a code check, 0 = all")
     ap.add_argument('--hub', help="Hugging Face dataset repo, <user>/<name>")
     ap.add_argument('--hub-every', type=int, default=2)
-    ap.add_argument('--accelerator', help="passed to kaggle kernels push")
     ap.add_argument('--slug', default='ips-suite-v3-runner',
                     help="Kaggle notebook name; one per account keeps its attached secrets")
+    ap.add_argument('--accelerator', help="passed to kaggle kernels push")
     ap.add_argument('--allow-dirty', action='store_true')
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--status', action='store_true')
     args = ap.parse_args()
     if args.status:
         return status(args)
-    if not args.runs or not args.hub:
-        ap.error("--runs and --hub are required to launch")
+    if not args.runs:
+        ap.error("--runs is required to launch")
     return launch(args)
 
 

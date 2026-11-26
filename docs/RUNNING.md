@@ -27,15 +27,16 @@ a table without saying so (the aggregation script lists them and warns).
    echo '<kaggle-username>' > ~/.config/ips-suite/kaggle/axel/username
    chmod 600 ~/.config/ips-suite/kaggle/axel/*
    ```
-
+   
    Or, simpler: a file `.env` at the root of this repository (ignored by
    git), read by the scripts with `--env-file .env`:
-
+   
    ```sh
    KAGGLE_USERNAME=<kaggle-username>
    KAGGLE_API_TOKEN=<kaggle API token>
    HF_TOKEN=<hugging face token>
    ```
+
 4. On your machine, the Hugging Face token for pulling results (or `HF_TOKEN`
    in `.env`, with `python hub/pull_results.py --env-file .env ...`):
    `hf auth login` (or `export HF_TOKEN=...` in your shell profile).
@@ -44,19 +45,27 @@ Kaggle allows **one account per person**. Several accounts are fine when each
 belongs to a different person (you, a co-author, a supervisor) who agreed to
 run the jobs; the profile name is that person's.
 
+**Several accounts.** One file per account in `accounts/` (ignored by git),
+for example `accounts/axel.env`, `accounts/kerol.env`, each with
+`KAGGLE_USERNAME`, `KAGGLE_API_TOKEN` and optionally `IPS_HUB_REPO`. Each of
+these Kaggle accounts needs the `HF_TOKEN` secret too. With `--accounts
+accounts`, every account receives the same run list and a different share of
+it (`IPS_SHARD`), so no run is launched twice; the shares are written to
+`kaggle/last-plan.json`.
+
 **Launch**
 
 ```sh
-python kaggle/launch.py --profile axel --runs ddr_ms66_33,ddr_h66_33 \
-    --hub <hf-user>/ips-suite-runs --epochs 50
-python kaggle/launch.py --profile axel --status
+python kaggle/launch.py --env-file .env --runs ddr_ms66_33,ddr_h66_33 --epochs 50
+python kaggle/launch.py --accounts accounts --runs focus --epochs 50
+python kaggle/launch.py --accounts accounts --status
 ```
 
 A code check first (one epoch on 200 images per split, results kept apart
 on the Hub because the run names are the same but the data is not):
 
 ```sh
-python kaggle/launch.py --profile axel --runs ddr_ips66,rsna_ips300 \
+python kaggle/launch.py --env-file .env --runs ddr_ips66,rsna_ips300 \
     --hub <hf-user>/ips-suite-checks --epochs 1 --smoke 200
 ```
 
