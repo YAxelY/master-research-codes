@@ -1,8 +1,9 @@
 #!/bin/bash
 # =============================================================================
-#  run-ips-suite-v3.sh : cluster script for ips-suite-v3.ipynb (DDR and RSNA)
+#  run-ips-suite-v3.sh : cluster script for the ips_suite package (DDR and RSNA)
 #
-#  Needs this script, the notebook and kaggle.json in the same folder.
+#  Runs src/ips_suite (python -m ips_suite), the same code as the notebook.
+#  Needs this script, src/ and kaggle.json in the same folder.
 #
 #  The argument is a list of run names and/or GROUP names, comma separated.
 #  Groups: core, ablation, mstudy, patch, base, ms, lowres, hires, lowdata,
@@ -246,68 +247,6 @@ flock -u 9
 echo "[LOCK] Relâché."
 
 # =============================================================================
-#  Conversion notebook → script Python
-#  Un fichier par job : plusieurs jobs ne doivent pas écrire le même.
-# =============================================================================
-SCRIPT_PY="_run_${NOTEBOOK_NAME}_${TAG}_s${IPS_SEEDS:-42}_${SLURM_JOB_ID:-local}_$$.py"
-
-echo "[CONVERT] Notebook → script Python..."
-# --to python, not --to script: a notebook saved by Kaggle has an empty
-# language name, and --to script then writes a .txt file instead of a .py.
-jupyter nbconvert \
-    --to python \
-    --output "${SCRIPT_PY%.py}" \
-    --output-dir "." \
-    "$SCRIPT_DIR/$NOTEBOOK"
-[ -f "$SCRIPT_PY" ] || { [ -f "${SCRIPT_PY%.py}.txt" ] && mv "${SCRIPT_PY%.py}.txt" "$SCRIPT_PY"; }
-[ -f "$SCRIPT_PY" ] || { echo "[ERROR] conversion failed: $SCRIPT_PY not written"; exit 1; }
-
-echo "[OK] Script généré : $SCRIPT_PY"
-
-# =============================================================================
-#  Patch des magics Jupyter + filet de sécurité sur les chemins
-# =============================================================================
-echo "[PATCH] Nettoyage du script..."
-
-python - << PYEOF
-import re
-
-script = "$SCRIPT_PY"
-wk     = "$(pwd)/outputs"
-
-with open(script) as f:
-    src = f.read()
-
-# ── 1. Supprimer toutes les lignes !pip install (magics Jupyter) ─────────────
-#    codecarbon et toute autre dépendance sont déjà installés par le bash
-src = re.sub(r'^.*!pip install.*\$', '', src, flags=re.MULTILINE)
-
-# ── 2. get_ipython() laissé par nbconvert ────────────────────────────────────
-src = re.sub(r'^(\s*)get_ipython\(\)', r'\1pass  # get_ipython()', src,
-             flags=re.MULTILINE)
-
-# ── 3. /kaggle/working — filet de sécurité ───────────────────────────────────
-#    Les chemins viennent normalement des variables IPS_* exportées plus bas.
-#    Ce remplacement ne sert que si une valeur par défaut Kaggle survivait.
-src = src.replace("'/kaggle/working'", f"'{wk}'")
-src = src.replace('"/kaggle/working"', f'"{wk}"')
-src = re.sub(r"(['\"])/kaggle/working", lambda m: m.group(1) + wk, src)
-
-# ── 4. tqdm.notebook → tqdm ──────────────────────────────────────────────────
-src = src.replace("from tqdm.notebook import tqdm", "from tqdm import tqdm")
-
-# ── 5. plt.show() → plt.close('all') ─────────────────────────────────────────
-src = re.sub(r'\bplt\.show\(\)', "plt.close('all')", src)
-
-with open(script, "w") as f:
-    f.write(src)
-
-print("  !pip install supprimés   (codecarbon déjà installé par bash)")
-print(f"  /kaggle/working         → {wk}   (filet de sécurité)")
-print("  Patch OK.")
-PYEOF
-
-# =============================================================================
 #  Chemins et sélection passés au notebook par l'environnement
 # =============================================================================
 export IPS_WORK="$(pwd)/outputs"
@@ -355,7 +294,7 @@ STAMP=".stamp_${SLURM_JOB_ID:-local}_$$"
 touch "$STAMP"
 
 set +e
-python "$SCRIPT_PY"
+PYTHONPATH="$SCRIPT_DIR/src${PYTHONPATH:+:$PYTHONPATH}" python -m ips_suite
 EXIT_CODE=$?
 set -e
 
@@ -367,7 +306,6 @@ echo "Exit code : $EXIT_CODE"
 #  Résumé post-run
 # =============================================================================
 if [ $EXIT_CODE -eq 0 ]; then
-    rm -f "$SCRIPT_PY"          # conservé en cas d'échec, pour déboguer
     echo ""
     echo "[DONE] Succès."
     echo ""

@@ -41,8 +41,14 @@ def code_commit():
         return subprocess.run(['git', '-C', str(REPO), *args], capture_output=True,
                               text=True, check=True).stdout.strip()
     commit = git('rev-parse', '--short', 'HEAD')
-    dirty = bool(git('status', '--porcelain', '--', NOTEBOOK.name))
+    dirty = bool(git('status', '--porcelain', '--', NOTEBOOK.name, 'src'))
     return commit, dirty
+
+
+def notebook_is_current():
+    check = subprocess.run([sys.executable, str(REPO / 'tools' / 'build_notebook.py'), '--check'],
+                           capture_output=True, text=True)
+    return check.returncode == 0
 
 
 def kernel_slug(runs, seeds, smoke):
@@ -88,10 +94,12 @@ def kaggle(profile, *args):
 
 
 def launch(args):
+    if not notebook_is_current():
+        sys.exit("the notebook does not match src/ips_suite: run python tools/build_notebook.py")
     commit, dirty = code_commit()
     if dirty and not args.allow_dirty:
-        sys.exit("the notebook has uncommitted changes: commit them, so that the "
-                 "results can name the exact code (or pass --allow-dirty)")
+        sys.exit("src/ or the notebook has uncommitted changes: commit them, so that "
+                 "the results can name the exact code (or pass --allow-dirty)")
     commit += '-dirty' if dirty else ''
     user, slug = kaggle_user(args.profile), kernel_slug(args.runs, args.seeds, args.smoke)
     with tempfile.TemporaryDirectory() as folder:
