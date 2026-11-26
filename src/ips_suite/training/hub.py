@@ -1,24 +1,40 @@
 import os
+import shutil
 import time
 from pathlib import Path
 
 from ips_suite.config.environment import SUITE_VERSION, _env, _env_int
 from ips_suite.config.experiments import ARTIFACTS, RESULTS, WORK
 
+TOKEN_DATASET = 'ips-suite-hub-token'
+KAGGLE_INPUT = Path('/kaggle/input')
 
-import shutil
+
+def _token_from_kaggle_dataset():
+    candidates = [KAGGLE_INPUT / TOKEN_DATASET / 'hf_token',
+                  *KAGGLE_INPUT.glob(f'datasets/*/{TOKEN_DATASET}/hf_token')]
+    for path in candidates:
+        if path.is_file():
+            return path.read_text().strip()
+    return ''
 
 
-def _hf_token():
-    token = os.environ.get('HF_TOKEN', '').strip()
-    if token:
-        return token
+def _token_from_kaggle_secret():
     try:
         from kaggle_secrets import UserSecretsClient
         return UserSecretsClient().get_secret('HF_TOKEN')
-    except Exception as exc:
-        raise RuntimeError("IPS_HUB_REPO is set but HF_TOKEN is missing "
-                           "(environment variable or Kaggle secret)") from exc
+    except Exception:
+        return ''
+
+
+def _hf_token():
+    token = (os.environ.get('HF_TOKEN', '').strip() or _token_from_kaggle_dataset()
+             or _token_from_kaggle_secret())
+    if not token:
+        raise RuntimeError("IPS_HUB_REPO is set but no Hugging Face token was found "
+                           "(HF_TOKEN variable, Kaggle dataset ips-suite-hub-token, "
+                           "or Kaggle secret HF_TOKEN)")
+    return token
 
 
 class HubMirror:

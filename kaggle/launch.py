@@ -5,8 +5,11 @@
     python kaggle/launch.py --accounts accounts --runs focus --epochs 50
     python kaggle/launch.py --accounts accounts --status
 
-An account is a .env file with KAGGLE_USERNAME and KAGGLE_API_TOKEN (and
-optionally IPS_HUB_REPO, the default for --hub). With several accounts, every
+An account is a .env file with KAGGLE_USERNAME, KAGGLE_API_TOKEN and HF_TOKEN
+(and optionally IPS_HUB_REPO, the default for --hub). The Hugging Face token
+reaches the run through a private Kaggle dataset of that account,
+ips-suite-hub-token, created by this script when missing (--refresh-token to
+replace it). With several accounts, every
 account gets the same list of runs and a different share of it (IPS_SHARD =
 i/n, applied by the package), so no run is launched twice. Each account owns
 one Kaggle notebook (--slug), relaunched as a new version. See docs/RUNNING.md.
@@ -29,6 +32,7 @@ PLAN = REPO / 'kaggle' / 'last-plan.json'
 DATASETS = ['samriddhibagchi/ddr-dataset-credits-to-authors',
             'iamtapendu/rsna-pneumonia-processed-dataset']
 SETTINGS_MARKER = "ON_KAGGLE = 'KAGGLE_KERNEL_RUN_TYPE' in os.environ"
+TOKEN_DATASET = 'ips-suite-hub-token'
 
 
 class Account:
@@ -41,12 +45,50 @@ class Account:
         self.source = Path(env_file)
         self.username = values['KAGGLE_USERNAME']
         self.hub_repo = values.get('IPS_HUB_REPO', '')
+        self.hf_token = values.get('HF_TOKEN', '')
         self._env = {'KAGGLE_API_TOKEN': values['KAGGLE_API_TOKEN']}
 
-    def kaggle(self, *args):
+    def _environment(self):
         inherited = {k: v for k, v in os.environ.items()
                      if k not in ('KAGGLE_API_TOKEN', 'KAGGLE_CONFIG_DIR')}
-        return subprocess.run(['kaggle', *args], env={**inherited, **self._env}, text=True)
+        return {**inherited, **self._env}
+
+    def kaggle(self, *args):
+        return subprocess.run(['kaggle', *args], env=self._environment(), text=True)
+
+    def kaggle_quiet(self, *args):
+        return subprocess.run(['kaggle', *args], env=self._environment(), text=True,
+                              capture_output=True)
+
+
+def token_dataset_is_ready(account):
+    check = account.kaggle_quiet('datasets', 'status', f"{account.username}/{TOKEN_DATASET}")
+    return check.returncode == 0 and 'ready' in check.stdout
+
+
+def publish_token_dataset(account, replace):
+    if not account.hf_token:
+        sys.exit(f"{account.source} lacks HF_TOKEN, needed by the run to reach the Hub")
+    exists = token_dataset_is_ready(account)
+    if exists and not replace:
+        return
+    with tempfile.TemporaryDirectory() as folder:
+        folder = Path(folder)
+        token_file = folder / 'hf_token'
+        token_file.write_text(account.hf_token)
+        token_file.chmod(0o600)
+        (folder / 'dataset-metadata.json').write_text(json.dumps({
+            'title': TOKEN_DATASET, 'id': f"{account.username}/{TOKEN_DATASET}",
+            'licenses': [{'name': 'other'}]}))
+        if exists:
+            account.kaggle('datasets', 'version', '-p', str(folder), '-m', 'token replaced')
+        else:
+            account.kaggle('datasets', 'create', '-p', str(folder))
+    for _ in range(30):
+        if token_dataset_is_ready(account):
+            return
+        time.sleep(10)
+    sys.exit(f"{account.username}/{TOKEN_DATASET} is not ready on Kaggle yet: launch again in a minute")
 
 
 def load_accounts(args):
@@ -101,7 +143,8 @@ def kernel_metadata(user, slug):
         'id': f"{user}/{slug}", 'title': slug, 'code_file': NOTEBOOK.name,
         'language': 'python', 'kernel_type': 'notebook', 'is_private': True,
         'enable_gpu': True, 'enable_internet': True,
-        'dataset_sources': DATASETS, 'competition_sources': [], 'kernel_sources': [],
+        'dataset_sources': DATASETS + [f"{user}/{TOKEN_DATASET}"],
+        'competition_sources': [], 'kernel_sources': [],
     }
 
 
@@ -143,6 +186,7 @@ def launch(args):
               + (f", code check on {args.smoke} images per split" if args.smoke else '')
               + f", code {commit}, hub {hub}")
         if not args.dry_run:
+            publish_token_dataset(account, replace=args.refresh_token)
             failures += push(account, args, hub, shard, commit) != 0
     if not args.dry_run:
         PLAN.write_text(json.dumps(plan, indent=1))
@@ -170,6 +214,8 @@ def main():
     ap.add_argument('--slug', default='ips-suite-v3-runner',
                     help="Kaggle notebook name; one per account keeps its attached secrets")
     ap.add_argument('--accelerator', help="passed to kaggle kernels push")
+    ap.add_argument('--refresh-token', action='store_true',
+                    help="replace the Hugging Face token stored on Kaggle")
     ap.add_argument('--allow-dirty', action='store_true')
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--status', action='store_true')

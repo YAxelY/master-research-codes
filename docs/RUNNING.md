@@ -10,22 +10,25 @@ a table without saying so (the aggregation script lists them and warns).
 1. A Hugging Face account and a token with *write* access
    (huggingface.co, Settings, Access Tokens).
 
-2. On Kaggle: a verified phone number (needed for GPU and internet), and the
-   Hugging Face token as a secret named `HF_TOKEN` (in a notebook: Add-ons,
-   Secrets). After the first launch, open the notebook `ips-suite-v3-runner`
-   on Kaggle once and tick `HF_TOKEN` in Add-ons, Secrets, so that it is
-   attached to that notebook.
+2. On Kaggle: a verified phone number (needed for GPU and internet). The
+   Hugging Face token needs no manual step: the launcher stores it, from
+   `HF_TOKEN` in the account's .env, in a private dataset of that account
+   (`ips-suite-hub-token`) and attaches it to each run (`--refresh-token`
+   after changing the token). Prefer a fine-grained token limited to the
+   `<hf-user>/ips-suite-*` repositories: whoever can read that dataset can
+   read the token.
 
 3. On your machine, a file `.env` at the root of this repository (ignored by
    git), read by the scripts with `--env-file .env`; type the tokens in your
    editor, never in a chat:
-
+   
    ```sh
    KAGGLE_USERNAME=<kaggle-username>
    KAGGLE_API_TOKEN=<kaggle API token>
    HF_TOKEN=<hugging face token>
    IPS_HUB_REPO=<hf-user>/ips-suite-runs
    ```
+
 4. On your machine, the Hugging Face token for pulling results (or `HF_TOKEN`
    in `.env`, with `python hub/pull_results.py --env-file .env ...`):
    `hf auth login` (or `export HF_TOKEN=...` in your shell profile).
