@@ -17,7 +17,7 @@ from ips_suite.evaluation.selection import selection_study
 from ips_suite.evaluation.splits import evaluate_split
 from ips_suite.models.factory import build_model, cost_report, efficiency_profile
 from ips_suite.training.epoch import IMAGE_MODELS, run_epoch
-from ips_suite.training.hub import HUB, RunFiles
+from ips_suite.training.hub import CLAIMS, HUB, RunFiles
 from ips_suite.config import experiments
 
 
@@ -188,6 +188,7 @@ def run(name, seed, n_epoch=None):
                     'best_ep': best_ep, 'co2': co2_prev}, s_path)
         if HUB.is_due(ep + 1, conf.n_epoch):
             HUB.push(files.resume_point, f"{conf.run_name}: epoch {ep + 1}")
+        CLAIMS.refresh(conf.run_name)
 
     co2 = co2_prev
     energy = None

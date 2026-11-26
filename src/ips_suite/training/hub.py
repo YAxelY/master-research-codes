@@ -1,6 +1,9 @@
+import json
 import os
+import platform
 import shutil
 import time
+import uuid
 from pathlib import Path
 
 from ips_suite.config.environment import SUITE_VERSION, _env, _env_int
@@ -107,13 +110,82 @@ class HubMirror:
         return False
 
     def delete(self, local, message):
-        if not self.enabled:
-            return
+        if self.enabled:
+            self.remove(self.remote_path(local), message)
+
+    def remove(self, path, message):
         try:
-            self.api.delete_file(self.remote_path(local), self.repo,
-                                 repo_type='dataset', commit_message=message)
+            self.api.delete_file(path, self.repo, repo_type='dataset', commit_message=message)
         except Exception as exc:
-            print(f"  [hub] could not delete {local.name}: {exc!r}")
+            print(f"  [hub] could not delete {path}: {exc!r}")
+
+    def put(self, path, data, message):
+        from huggingface_hub import CommitOperationAdd
+        try:
+            self.api.create_commit(self.repo, [CommitOperationAdd(path, data)],
+                                   commit_message=message, repo_type='dataset')
+            return True
+        except Exception as exc:
+            print(f"  [hub] could not write {path}: {exc!r}")
+            return False
+
+    def get(self, path):
+        from huggingface_hub import hf_hub_download
+        try:
+            local = hf_hub_download(self.repo, path, repo_type='dataset', force_download=True,
+                                    local_dir=str(self.cache_dir))
+            return Path(local).read_bytes()
+        except Exception:
+            return None
+
+
+class RunClaims:
+
+    def __init__(self, mirror, stale_minutes, session, clock=time.time, settle_seconds=5):
+        self.mirror = mirror
+        self.stale_seconds = stale_minutes * 60
+        self.session = session
+        self.clock = clock
+        self.settle_seconds = settle_seconds
+
+    def _path(self, run_name):
+        return f"{self.mirror.suite}/claims/{run_name}.json"
+
+    def _read(self, run_name):
+        data = self.mirror.get(self._path(run_name))
+        return json.loads(data) if data else None
+
+    def _write(self, run_name, message):
+        marker = {'session': self.session, 'refreshed': self.clock()}
+        return self.mirror.put(self._path(run_name), json.dumps(marker).encode(), message)
+
+    def _held_by_another(self, marker):
+        return (marker is not None and marker['session'] != self.session
+                and self.clock() - marker['refreshed'] < self.stale_seconds)
+
+    def claim(self, run_name):
+        if not self.mirror.enabled:
+            return True
+        if self._held_by_another(self._read(run_name)):
+            print(f"  [hub] {run_name}: being trained by another session, skipped")
+            return False
+        if not self._write(run_name, f"{run_name}: claimed by {self.session}"):
+            print(f"  [hub] {run_name}: could not write the claim, training anyway")
+            return True
+        time.sleep(self.settle_seconds)
+        marker = self._read(run_name)
+        if marker is not None and marker['session'] != self.session:
+            print(f"  [hub] {run_name}: claimed at the same time by {marker['session']}, skipped")
+            return False
+        return True
+
+    def refresh(self, run_name):
+        if self.mirror.enabled:
+            self._write(run_name, f"{run_name}: still training")
+
+    def release(self, run_name):
+        if self.mirror.enabled:
+            self.mirror.remove(self._path(run_name), f"{run_name}: released")
 
 
 class RunFiles:
@@ -144,5 +216,8 @@ class RunFiles:
 HUB = HubMirror(repo=_env('IPS_HUB_REPO'), suite=f"ips-suite-{SUITE_VERSION}",
                 roots={'results': RESULTS, 'artifacts': ARTIFACTS},
                 every=_env_int('IPS_HUB_EVERY', 2), cache_dir=WORK / 'hub-cache')
+SESSION = f"{platform.node()}-{uuid.uuid4().hex[:8]}"
+CLAIMS = RunClaims(HUB, stale_minutes=_env_int('IPS_HUB_CLAIM_STALE_MIN', 120), session=SESSION)
 if HUB.enabled:
-    print(f"  hub         : {HUB.repo} (private dataset, sync every {HUB.every} epochs)")
+    print(f"  hub         : {HUB.repo} (private dataset, sync every {HUB.every} epochs, "
+          f"session {SESSION})")

@@ -94,12 +94,17 @@ def hub_module(tmp_path, monkeypatch):
             for op in operations:
                 target = store / op.path_in_repo
                 target.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(op.source, target)
+                if isinstance(op.source, bytes):
+                    target.write_bytes(op.source)
+                else:
+                    shutil.copy2(op.source, target)
 
         def delete_file(self, path, repo, repo_type, commit_message):
             (store / path).unlink()
 
-    def hf_hub_download(repo, path, repo_type, local_dir):
+    def hf_hub_download(repo, path, repo_type, local_dir, force_download=False):
+        if not (store / path).exists():
+            raise FileNotFoundError(path)
         target = Path(local_dir) / path
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(store / path, target)
@@ -122,11 +127,11 @@ def hub_module(tmp_path, monkeypatch):
     monkeypatch.setenv('HF_TOKEN', 'hf_test')
     hub = load('hub_under_test', REPO / 'src' / 'ips_suite' / 'training' / 'hub.py')
     monkeypatch.setattr(hub.time, 'sleep', lambda seconds: None)
-    return hub, HfApi, work
+    return hub, HfApi, work, store
 
 
 def test_hub_resume_and_final_upload(hub_module):
-    hub, HfApi, work = hub_module
+    hub, HfApi, work, _ = hub_module
     files = hub.RunFiles('ddr_ips66', 'ddr_ips66_s42')
     assert hub.HUB.remote_path(files.state) == \
         'ips-suite-v3/artifacts/ddr_ips66/checkpoints/ddr_ips66_s42_state.pt'
@@ -153,7 +158,7 @@ def test_hub_resume_and_final_upload(hub_module):
 
 
 def test_hub_token_lookup_order(hub_module, tmp_path, monkeypatch):
-    hub, _, _ = hub_module
+    hub, _, _, _ = hub_module
     monkeypatch.setattr(hub, 'KAGGLE_INPUT', tmp_path / 'input')
     monkeypatch.delenv('HF_TOKEN')
     with pytest.raises(RuntimeError):
@@ -219,3 +224,41 @@ def test_cache_is_skipped_when_the_disk_lacks_room(tmp_path):
     assert not fits(cache, n_bytes=30e9, free_bytes=20e9)
     cache.with_suffix('.done').write_text('6260')
     assert fits(cache, n_bytes=30e9, free_bytes=1e9)
+
+
+def claims_for(hub, session, now):
+    return hub.RunClaims(hub.HUB, stale_minutes=120, session=session, clock=lambda: now[0],
+                         settle_seconds=0)
+
+
+def test_a_run_is_trained_by_one_session_only(hub_module):
+    hub, _, _, store = hub_module
+    now = [1000.0]
+    first, second = claims_for(hub, 'kaggle-a', now), claims_for(hub, 'kaggle-b', now)
+    assert first.claim('ddr_ips66_s42')
+    assert (store / 'ips-suite-v3' / 'claims' / 'ddr_ips66_s42.json').exists()
+    assert not second.claim('ddr_ips66_s42')
+    now[0] += 60 * 60
+    first.refresh('ddr_ips66_s42')
+    now[0] += 60 * 60
+    assert not second.claim('ddr_ips66_s42')
+    first.release('ddr_ips66_s42')
+    assert not (store / 'ips-suite-v3' / 'claims' / 'ddr_ips66_s42.json').exists()
+    assert second.claim('ddr_ips66_s42')
+
+
+def test_an_abandoned_claim_is_taken_over(hub_module):
+    hub, _, _, _ = hub_module
+    now = [1000.0]
+    stopped, relaunched = claims_for(hub, 'kaggle-old', now), claims_for(hub, 'kaggle-new', now)
+    assert stopped.claim('rsna_base1024_s42')
+    now[0] += 3 * 60 * 60
+    assert relaunched.claim('rsna_base1024_s42')
+
+
+def test_simultaneous_claims_leave_one_session(hub_module, monkeypatch):
+    hub, _, _, _ = hub_module
+    now = [1000.0]
+    mine, other = claims_for(hub, 'kaggle-a', now), claims_for(hub, 'kaggle-b', now)
+    monkeypatch.setattr(hub.time, 'sleep', lambda seconds: other._write('ddr_ips66_s42', 'race'))
+    assert not mine.claim('ddr_ips66_s42')
