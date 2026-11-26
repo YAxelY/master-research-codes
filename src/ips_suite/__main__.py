@@ -6,6 +6,7 @@ from ips_suite.config.environment import _env, _env_int
 from ips_suite.config.experiments import GROUPS, REGISTRY, RESULTS, V2, make_conf
 from ips_suite.evaluation.benchmark import bench
 from ips_suite.models.factory import build_model, cost_report
+from ips_suite.training.hub import HUB
 from ips_suite.training.runner import eval_v2, run
 
 
@@ -69,6 +70,8 @@ def main():
                 print(f"\n[FAILED] {_k} : {_exc!r}")
                 traceback.print_exc()
     elif MODE == 'train':
+        if HUB.enabled:
+            HUB.connect()
         TO_RUN = _share(_expand(_sel, REGISTRY), _env('IPS_SHARD'))
         print(f"To run : {TO_RUN}  seeds {SEEDS}"
               + (f"  ({EPOCHS} epochs)" if EPOCHS else ""))

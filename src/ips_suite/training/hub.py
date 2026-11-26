@@ -44,6 +44,9 @@ class HubMirror:
                                   exist_ok=True)
         return self._api
 
+    def connect(self):
+        return self.api
+
     def remote_path(self, local):
         local = Path(local)
         for part, root in self.roots.items():
