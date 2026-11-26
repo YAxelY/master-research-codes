@@ -62,3 +62,12 @@ through the environment or `~/.kaggle/kaggle.json`; **do not commit that file.**
 ## Author
 
 MBOUMEU YOUMBI Axel Aubin — mboumeu581@gmail.com — [github.com/YAxelY](https://github.com/YAxelY)
+
+## Current code: ips-suite v3
+
+The experiments after the thesis use the package `src/ips_suite/` (config,
+data, models, training, evaluation), run with `python -m ips_suite` on a
+cluster (`run-ips-suite-v3.sh`) or on Kaggle (`ips-suite-v3.ipynb`, generated
+from the package by `tools/build_notebook.py`). See `docs/ARCHITECTURE.md`
+(diagrams), `docs/DECISIONS.md` (design choices) and `docs/RUNNING.md`
+(running, reporting). Tests: `python -m pytest tests`.

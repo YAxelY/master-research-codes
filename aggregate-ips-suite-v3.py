@@ -15,6 +15,16 @@ Writes into RESULTS_DIR/aggregate/ :
   tables.md       the tables, ready to read
 Units: memory in GB = MB / 1000. Scores are TEST scores at the epoch chosen
 on validation, unless a column says `val`.
+
+Experimental setup: every run records where it ran (`setup`, e.g.
+kaggle/Tesla T4 or slurm/NVIDIA A40) and a hash of the images of each split.
+Scores of runs on the same split hashes are comparable whatever the setup;
+time and memory are comparable only within one GPU type. tables.md lists the
+setups and warns when a table or a pair mixes them. Runs made before suite
+v3.1 have no setup record and show `unrecorded`.
+
+Every test score stored in a result file is recomputed from the per-image
+predictions (`test_from_predictions`); a difference is reported as a warning.
 """
 import sys, re, json, argparse
 from pathlib import Path
@@ -112,8 +122,14 @@ def main():
         r = json.load(open(f))
         c, k, t, key = r['config'], r['cost'], r['timing'], r['main_metric']
         task = c['task_type']
+        env = r.get('environment') or {}
+        sh = (r.get('data') or {}).get('split_hash') or {}
+        gpu = env.get('gpu') or t.get('gpu') or '?'
         row = dict(
             run=r['run_name'], config=r['name'], seed=r['seed'], dataset=c['dataset'],
+            setup=f"{env.get('platform', 'unrecorded')}/{gpu}", gpu=gpu,
+            code_commit=env.get('code_commit'), rng=env.get('rng', 'per-run seed (v3.0)'),
+            split_test=sh.get('test'), split_val=sh.get('val'), split_train=sh.get('train'),
             model=c['model'],
             scales=(f"base{c.get('baseline_size')}" if c['model'] == 'baseline'
                     else '-'.join(map(str, c['scales']))),
@@ -175,8 +191,10 @@ def main():
                         row[f'les_{typ}_x'] = les[typ]['enrichment']
                         row[f'les_{typ}_hit'] = les[typ]['hit_rate']
         pr = load_pred(root, r['run_name'])
-        if pr is not None and a.boot:
-            row['ci_lo'], row['ci_hi'] = boot(pr[0], pr[1], task, a.boot, rng)
+        if pr is not None:
+            row['test_from_predictions'] = score(pr[0], pr[1], task)
+            if a.boot:
+                row['ci_lo'], row['ci_hi'] = boot(pr[0], pr[1], task, a.boot, rng)
         rows.append(row)
     if not rows:
         sys.exit(f"no */experiments/*_result.json in {root}")
@@ -188,6 +206,7 @@ def main():
     g = runs.groupby('config', sort=False)
     conf = g[['dataset', 'model', 'scales', 'M', 'train_coarse', 'candidates', 'metric']].first()
     conf['n_seeds'] = g.size()
+    conf['setups'] = g['setup'].agg(lambda v: ', '.join(sorted(set(v))))
     for c in num:
         conf[c] = g[c].mean()
         if c in ('test', 'val', 'peak_gb', 'les_test_x', 'gain_positions',
@@ -218,8 +237,13 @@ def main():
             task = 'ordinal' if px[1].shape[1] > 2 else 'binary'
             d = score(px[0], px[1], task) - score(py[0], py[1], task)
             lo, hi = boot(px[0], px[1], task, a.boot, rng, py[1]) if a.boot else (np.nan, np.nan)
+            rx = runs[(runs.config == x) & (runs.seed == seed)].iloc[0]
+            ry = runs[(runs.config == y) & (runs.seed == seed)].iloc[0]
+            same_split = (pd.isna(rx.split_test) or pd.isna(ry.split_test)
+                          or rx.split_test == ry.split_test)
             prow.append(dict(a=x, b=y, question=why, seed=seed, diff=d, ci_lo=lo, ci_hi=hi,
-                             excludes_zero=bool(lo > 0 or hi < 0)))
+                             excludes_zero=bool(lo > 0 or hi < 0),
+                             same_setup=rx.setup == ry.setup, same_test_images=same_split))
     pairs = pd.DataFrame(prow)
     pairs.to_csv(out / 'pairs.csv', index=False)
 
@@ -243,10 +267,33 @@ def main():
     cr = conf.reset_index()
     txt = "# ips-suite-v3 : aggregate\n\nTest scores at the epoch chosen on validation. " \
           "Memory in GB (MB / 1000). `_sd` is the standard deviation over seeds.\n"
+    txt += "\n## Experimental setups\n\n" + md(
+        runs.groupby('setup').agg(runs=('run', 'size'), configs=('config', 'nunique'),
+                                  commits=('code_commit', lambda v: ', '.join(sorted({str(x) for x in v if x})) or '-'))
+        .reset_index(), ['setup', 'runs', 'configs', 'commits'], {})
+    warn = []
+    for ds in runs.dataset.unique():
+        d = runs[runs.dataset == ds]
+        if d.setup.nunique() > 1:
+            warn.append(f"{ds.upper()}: runs come from {d.setup.nunique()} setups "
+                        f"({', '.join(sorted(d.setup.unique()))}); compare times and memory "
+                        f"only within one GPU type.")
+        for col in ('split_test', 'split_val'):
+            h = d[col].dropna().unique()
+            if len(h) > 1:
+                warn.append(f"{ds.upper()}: {len(h)} different `{col}` hashes: some runs did "
+                            f"not use the same images; their scores are NOT comparable.")
+    if 'test_from_predictions' in runs:
+        gap = (runs.test - runs.test_from_predictions).abs()
+        for _, r in runs[gap > 1e-4].iterrows():
+            warn.append(f"{r.run}: the stored test score {r.test:.4f} differs from the one "
+                        f"recomputed from its predictions ({r.test_from_predictions:.4f}).")
+    if warn:
+        txt += "\n**Warnings**\n\n" + "\n".join(f"- {w}" for w in warn) + "\n"
     for ds in cr.dataset.unique():
         d = cr[cr.dataset == ds].sort_values('test', ascending=False)
         txt += f"\n## {ds.upper()} : score and cost\n\n" + md(
-            d, ['config', 'n_seeds', 'M', 'candidates', 'train_px', 'test', 'test_sd', 'val',
+            d, ['config', 'setups', 'n_seeds', 'M', 'candidates', 'train_px', 'test', 'test_sd', 'val',
                 'val_minus_test', 'peak_gb', 'peak_select_gb', 'peak_step_gb',
                 'infer_peak_gb', 'infer_ms_img', 'gflops_infer', 'params_m',
                 'train_model_h', 'train_data_h'], fmt)
@@ -258,12 +305,13 @@ def main():
     if len(pairs):
         pm = pairs.groupby(['a', 'b', 'question'], sort=False).agg(
             seeds=('seed', 'size'), diff=('diff', 'mean'), ci_lo=('ci_lo', 'min'),
-            ci_hi=('ci_hi', 'max'), all_exclude_zero=('excludes_zero', 'all')).reset_index()
+            ci_hi=('ci_hi', 'max'), all_exclude_zero=('excludes_zero', 'all'),
+            same_setup=('same_setup', 'all'), same_images=('same_test_images', 'all')).reset_index()
         txt += ("\n## Paired comparisons (a minus b, same test images)\n\n"
                 "`diff` is the mean over seeds; the interval is the widest over seeds "
                 "(bootstrap on test images, 95 %).\n\n"
                 + md(pm, ['a', 'b', 'question', 'seeds', 'diff', 'ci_lo', 'ci_hi',
-                          'all_exclude_zero'], fmt))
+                          'all_exclude_zero', 'same_setup', 'same_images'], fmt))
     (out / 'tables.md').write_text(txt)
     print(txt)
     print(f"\n{len(runs)} runs, {len(conf)} configs, {len(pairs)} paired rows -> {out}")
