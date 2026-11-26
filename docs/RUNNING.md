@@ -16,34 +16,23 @@ a table without saying so (the aggregation script lists them and warns).
    on Kaggle once and tick `HF_TOKEN` in Add-ons, Secrets, so that it is
    attached to that notebook.
 
-3. On your machine, the Kaggle credentials in a profile folder
-   `~/.config/ips-suite/kaggle/<name>/`, either the downloaded `kaggle.json`,
-   or a new API token in a file `access_token` with the account name in a file
-   `username`. Type the token in your own terminal, never in a chat:
-   
-   ```sh
-   mkdir -p ~/.config/ips-suite/kaggle/axel && chmod 700 ~/.config/ips-suite
-   read -rs T && printf '%s' "$T" > ~/.config/ips-suite/kaggle/axel/access_token && unset T
-   echo '<kaggle-username>' > ~/.config/ips-suite/kaggle/axel/username
-   chmod 600 ~/.config/ips-suite/kaggle/axel/*
-   ```
-   
-   Or, simpler: a file `.env` at the root of this repository (ignored by
-   git), read by the scripts with `--env-file .env`:
-   
+3. On your machine, a file `.env` at the root of this repository (ignored by
+   git), read by the scripts with `--env-file .env`; type the tokens in your
+   editor, never in a chat:
+
    ```sh
    KAGGLE_USERNAME=<kaggle-username>
    KAGGLE_API_TOKEN=<kaggle API token>
    HF_TOKEN=<hugging face token>
+   IPS_HUB_REPO=<hf-user>/ips-suite-runs
    ```
-
 4. On your machine, the Hugging Face token for pulling results (or `HF_TOKEN`
    in `.env`, with `python hub/pull_results.py --env-file .env ...`):
    `hf auth login` (or `export HF_TOKEN=...` in your shell profile).
 
 Kaggle allows **one account per person**. Several accounts are fine when each
 belongs to a different person (you, a co-author, a supervisor) who agreed to
-run the jobs; the profile name is that person's.
+run the jobs; each has their own file in `accounts/`.
 
 **Several accounts.** One file per account in `accounts/` (ignored by git),
 for example `accounts/axel.env`, `accounts/kerol.env`, each with
