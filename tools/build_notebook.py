@@ -60,7 +60,7 @@ ON_KAGGLE = 'KAGGLE_KERNEL_RUN_TYPE' in os.environ
 if ON_KAGGLE:
     os.environ['IPS_MODE'] = 'train'
     os.environ['IPS_RUNS'] = 'ddr_mil33,ddr_ms66_33,ddr_h66_33,rsna_ips300,rsna_h300_150,rsna_mil300'
-    os.environ['IPS_CACHE_DIR'] = '/kaggle/working/cache'
+    os.environ['IPS_CACHE_DIR'] = '/tmp/ips-cache'
     os.environ['IPS_SEEDS'] = '42'
     os.environ['IPS_EPOCHS'] = '1'
     os.environ['IPS_SMOKE'] = '200'

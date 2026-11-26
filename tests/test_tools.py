@@ -209,3 +209,13 @@ def test_pull_patterns():
     assert pull.patterns_for(False, None) == ['ips-suite-v3/results/**']
     assert pull.patterns_for(False, 'all') == ['ips-suite-v3/analysis/**']
     assert pull.patterns_for(True, 'x') == ['ips-suite-v3/analysis/x/**']
+
+
+def test_cache_is_skipped_when_the_disk_lacks_room(tmp_path):
+    fits = function_from(REPO / 'src' / 'ips_suite' / 'data' / 'datasets.py', '_cache_fits')
+    fits.__globals__['Path'] = Path
+    cache = tmp_path / 'ddr_train.npy'
+    assert fits(cache, n_bytes=10e9, free_bytes=20e9)
+    assert not fits(cache, n_bytes=30e9, free_bytes=20e9)
+    cache.with_suffix('.done').write_text('6260')
+    assert fits(cache, n_bytes=30e9, free_bytes=1e9)
