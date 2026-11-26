@@ -26,6 +26,14 @@ python kaggle/launch.py --profile axel --runs ddr_ms66_33,ddr_h66_33 \
 python kaggle/launch.py --profile axel --status
 ```
 
+A code check first (one epoch on 200 images per split, results kept apart
+on the Hub because the run names are the same but the data is not):
+
+```sh
+python kaggle/launch.py --profile axel --runs ddr_ips66,rsna_ips300 \
+    --hub <hf-user>/ips-suite-checks --epochs 1 --smoke 200
+```
+
 The script commits nothing and needs a committed notebook: the commit id goes
 into every result. Each launch is one private notebook run on Kaggle ("Save &
 Run All"), so the computer can be switched off. Give each account a different

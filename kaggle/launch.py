@@ -45,15 +45,15 @@ def code_commit():
     return commit, dirty
 
 
-def kernel_slug(runs, seeds):
-    digest = hashlib.sha1(f"{runs}|{seeds}".encode()).hexdigest()[:8]
+def kernel_slug(runs, seeds, smoke):
+    digest = hashlib.sha1(f"{runs}|{seeds}|{smoke}".encode()).hexdigest()[:8]
     return f"ips-suite-v3-{digest}"
 
 
 def settings_cell(args, commit):
     values = {
         'IPS_MODE': 'train', 'IPS_RUNS': args.runs, 'IPS_SEEDS': args.seeds,
-        'IPS_EPOCHS': str(args.epochs), 'IPS_SMOKE': '0', 'IPS_WORKERS': '3',
+        'IPS_EPOCHS': str(args.epochs), 'IPS_SMOKE': str(args.smoke), 'IPS_WORKERS': '3',
         'IPS_CACHE_DIR': '/kaggle/working/cache', 'IPS_DDR_GEOMETRY': 'retina',
         'IPS_HUB_REPO': args.hub, 'IPS_HUB_EVERY': str(args.hub_every),
         'IPS_CODE_COMMIT': commit,
@@ -93,14 +93,15 @@ def launch(args):
         sys.exit("the notebook has uncommitted changes: commit them, so that the "
                  "results can name the exact code (or pass --allow-dirty)")
     commit += '-dirty' if dirty else ''
-    user, slug = kaggle_user(args.profile), kernel_slug(args.runs, args.seeds)
+    user, slug = kaggle_user(args.profile), kernel_slug(args.runs, args.seeds, args.smoke)
     with tempfile.TemporaryDirectory() as folder:
         folder = Path(folder)
         nb = notebook_with_settings(settings_cell(args, commit))
         (folder / NOTEBOOK.name).write_text(json.dumps(nb, indent=1))
         (folder / 'kernel-metadata.json').write_text(json.dumps(kernel_metadata(user, slug), indent=1))
         print(f"{user}/{slug}: runs {args.runs}, seeds {args.seeds}, "
-              f"{args.epochs} epochs, code {commit}, hub {args.hub}")
+              f"{args.epochs} epochs, code {commit}, hub {args.hub}"
+              + (f", code check on {args.smoke} images per split" if args.smoke else ""))
         if args.dry_run:
             print((folder / 'kernel-metadata.json').read_text())
             return 0
@@ -120,6 +121,7 @@ def main():
     ap.add_argument('--runs', help="run or group names, comma separated")
     ap.add_argument('--seeds', default='42')
     ap.add_argument('--epochs', type=int, default=50)
+    ap.add_argument('--smoke', type=int, default=0, help="images per split for a code check, 0 = all")
     ap.add_argument('--hub', help="Hugging Face dataset repo, <user>/<name>")
     ap.add_argument('--hub-every', type=int, default=2)
     ap.add_argument('--accelerator', help="passed to kaggle kernels push")
