@@ -77,6 +77,21 @@ python hub/pull_results.py --hub <hf-user>/ips-suite-runs
 python aggregate-ips-suite-v3.py hub-results/ips-suite-v3/results
 ```
 
+**Analyses next to the results (no heavy download).** An analysis listed in
+`analysis/registry.json` runs in a second Kaggle notebook,
+`ips-suite-v3-analysis`: it downloads from the Hub only what it needs (light
+results, or the weights and Grad-CAM maps), runs the analysis script, and
+uploads only its outputs to `ips-suite-v3/analysis/<date>_<name>/`.
+
+```sh
+python kaggle/launch.py --env-file .env --analysis aggregate
+python kaggle/launch.py --env-file .env --analysis aggregate --status
+python hub/pull_results.py --env-file .env --hub <hf-user>/ips-suite-runs --analysis all
+```
+
+A new analysis is a tested script in the repository plus one entry in the
+registry: what it needs, its command, where it writes.
+
 ## 2. The supervisor's cluster
 
 Unchanged: see the header of `run-ips-suite-v3.sh`. Results are pushed with

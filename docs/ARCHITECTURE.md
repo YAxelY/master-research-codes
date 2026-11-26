@@ -24,6 +24,8 @@ flowchart LR
   K2 --> HUB
   CL -.->|optional, IPS_HUB_REPO| HUB
   CL -->|git push of results/| GIT[(GitHub<br/>results branch)]
+  HUB -->|weights, maps, results| AN[Kaggle analysis notebook<br/>analysis/registry.json]
+  AN -->|outputs only| HUB
   HUB -->|hub/pull_results.py| LOC[local results folder]
   GIT --> LOC
   LOC --> AGG[aggregate-ips-suite-v3.py<br/>tables per setup]
