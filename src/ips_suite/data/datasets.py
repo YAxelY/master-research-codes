@@ -4,6 +4,7 @@ import numpy as np
 import os
 import pandas as pd
 import random
+import shutil
 import time
 import torch
 from PIL import Image
@@ -20,6 +21,16 @@ SPLIT_SEED = 42            # constant: the split never follows the run seed
 CACHE_DIR = _env('IPS_CACHE_DIR')            # '' = no cache
 CACHE_SETS = [s for s in _env('IPS_CACHE', 'ddr').split(',') if s]
 SMOKE_N = _env_int('IPS_SMOKE', 0)           # >0 : keep N images per split
+
+
+def _free_bytes(directory):
+    directory = Path(directory)
+    directory.mkdir(parents=True, exist_ok=True)
+    return shutil.disk_usage(directory).free
+
+
+def _cache_fits(path, n_bytes, free_bytes, margin=1.05):
+    return Path(path).with_suffix('.done').exists() or free_bytes >= n_bytes * margin
 
 
 def _build_cache(path, n, shape, load_one, n_thread=8):
@@ -110,9 +121,15 @@ class _Cached:
                 self._cache_path = Path(CACHE_DIR) / f"{stem}_jpg"
                 _build_cache_jpg(self._cache_path, len(self.items), load)
             else:
-                self._cache_kind = 'npy'
-                self._cache_path = Path(CACHE_DIR) / f"{stem}.npy"
-                _build_cache(self._cache_path, len(self.items), shape, load)
+                path = Path(CACHE_DIR) / f"{stem}.npy"
+                needed = len(self.items) * int(np.prod(shape))
+                free = _free_bytes(CACHE_DIR)
+                if _cache_fits(path, needed, free):
+                    self._cache_kind, self._cache_path = 'npy', path
+                    _build_cache(path, len(self.items), shape, load)
+                else:
+                    print(f"  [cache] {stem}: needs {needed / 1e9:.1f} GB, {free / 1e9:.1f} GB "
+                          f"free in {CACHE_DIR}: reading the original images instead")
 
     def _raw(self, i):
         if self._cache_path is not None and self._cache_kind == 'jpg':

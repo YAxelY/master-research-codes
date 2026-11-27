@@ -138,7 +138,7 @@ def settings_cell(args, hub, shard, commit):
     values = {
         'IPS_MODE': 'train', 'IPS_RUNS': args.runs, 'IPS_SHARD': shard,
         'IPS_SEEDS': args.seeds, 'IPS_EPOCHS': str(args.epochs), 'IPS_SMOKE': str(args.smoke),
-        'IPS_WORKERS': '3', 'IPS_CACHE_DIR': '/kaggle/working/cache',
+        'IPS_WORKERS': '3', 'IPS_CACHE_DIR': '/tmp/ips-cache',
         'IPS_DDR_GEOMETRY': 'retina', 'IPS_HUB_REPO': hub,
         'IPS_HUB_EVERY': str(args.hub_every), 'IPS_CODE_COMMIT': commit,
     }
@@ -224,6 +224,8 @@ def launch(args):
     for index, account in enumerate(accounts):
         shard = f"{index}/{len(accounts)}" if len(accounts) > 1 else ''
         plan['shares'][account.username] = shard or 'all'
+        if args.only and account.username not in args.only.split(','):
+            continue
         print(f"{account.username}/{args.slug}: runs {args.runs}"
               + (f" (share {shard})" if shard else '')
               + f", seeds {args.seeds}, {args.epochs} epochs"
@@ -265,6 +267,8 @@ def main():
     ap.add_argument('--accelerator', help="passed to kaggle kernels push")
     ap.add_argument('--refresh-token', action='store_true',
                     help="replace the Hugging Face token stored on Kaggle")
+    ap.add_argument('--only', help="with --accounts: relaunch only these usernames, "
+                                   "keeping the shares of the full account list")
     ap.add_argument('--allow-dirty', action='store_true')
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--status', action='store_true')

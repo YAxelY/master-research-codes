@@ -130,6 +130,7 @@ sequenceDiagram
   participant R as run()
   participant H as HubMirror
   participant E as run_epoch
+  R->>H: claim the run (skip it if another session holds a fresh claim)
   R->>H: pull result, best weights, resume state
   alt result exists
     R-->>R: skip
@@ -143,11 +144,12 @@ sequenceDiagram
     R->>R: best validation score: save weights
     R->>R: save resume state
     R->>H: every 2 epochs: push state and weights
+    R->>H: refresh the claim
   end
   R->>R: reload best weights
   R->>R: evaluate val and test, threshold on val, lesion and Grad-CAM studies
   R->>R: write result.json (with environment and split hashes)
-  R->>H: push results, delete resume state
+  R->>H: push results, delete resume state, release the claim
 ```
 
 Optimiser AdamW (peak lr 1e-4, weight decay 0.1), linear warm-up over 10

@@ -68,6 +68,10 @@ set of runs: two accounts must never run the same configuration and seed.
 
 A Kaggle session stops after 12 hours; relaunch the same command and the runs
 resume from the Hub where they stopped.
+Relaunching is always safe: a session claims each run on the Hub before
+training it and refreshes the claim every epoch, so another session skips a
+run that is being trained. A claim left by a session Kaggle stopped is taken
+over after 2 hours without refresh (`IPS_HUB_CLAIM_STALE_MIN`).
 
 **Collect**
 

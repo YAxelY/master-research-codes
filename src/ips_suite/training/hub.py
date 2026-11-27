@@ -1,12 +1,17 @@
+import json
 import os
+import platform
 import shutil
 import time
+import uuid
 from pathlib import Path
 
 from ips_suite.config.environment import SUITE_VERSION, _env, _env_int
 from ips_suite.config.experiments import ARTIFACTS, RESULTS, WORK
 
 TOKEN_DATASET = 'ips-suite-hub-token'
+# errors that mean "this file is not in the repository" (huggingface_hub, and the test stub)
+_NOT_FOUND = {'EntryNotFoundError', 'RemoteEntryNotFoundError', 'FileNotFoundError'}
 KAGGLE_INPUT = Path('/kaggle/input')
 
 
@@ -61,7 +66,23 @@ class HubMirror:
         return self._api
 
     def connect(self):
-        return self.api
+        """Open the repository and check that a download with the token works.
+
+        Writes (commits) and downloads authenticate separately: a session whose
+        downloads are anonymous can push checkpoints but never resume, and reads
+        every claim as free. Stop at once instead of training blind."""
+        api = self.api
+        try:
+            self._download('.gitattributes', force_download=True)
+        except Exception as exc:
+            raise RuntimeError(f"the Hub repository {self.repo} accepts the token for "
+                               f"writing but a download failed: {exc!r}") from exc
+        return api
+
+    def _download(self, path, force_download=False):
+        from huggingface_hub import hf_hub_download
+        return hf_hub_download(self.repo, path, repo_type='dataset', token=self.api.token,
+                               force_download=force_download, local_dir=str(self.cache_dir))
 
     def remote_path(self, local):
         local = Path(local)
@@ -76,14 +97,12 @@ class HubMirror:
     def pull(self, files):
         if not self.enabled:
             return
-        from huggingface_hub import hf_hub_download
         remote = set(self.api.list_repo_files(self.repo, repo_type='dataset'))
         for local in files:
             path = self.remote_path(local)
             if local.exists() or path not in remote:
                 continue
-            cached = hf_hub_download(self.repo, path, repo_type='dataset',
-                                     local_dir=str(self.cache_dir))
+            cached = self._download(path)
             local.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(cached, local)
             print(f"  [hub] fetched {path}")
@@ -107,13 +126,85 @@ class HubMirror:
         return False
 
     def delete(self, local, message):
-        if not self.enabled:
-            return
+        if self.enabled:
+            self.remove(self.remote_path(local), message)
+
+    def remove(self, path, message):
         try:
-            self.api.delete_file(self.remote_path(local), self.repo,
-                                 repo_type='dataset', commit_message=message)
+            self.api.delete_file(path, self.repo, repo_type='dataset', commit_message=message)
         except Exception as exc:
-            print(f"  [hub] could not delete {local.name}: {exc!r}")
+            print(f"  [hub] could not delete {path}: {exc!r}")
+
+    def put(self, path, data, message):
+        from huggingface_hub import CommitOperationAdd
+        try:
+            self.api.create_commit(self.repo, [CommitOperationAdd(path, data)],
+                                   commit_message=message, repo_type='dataset')
+            return True
+        except Exception as exc:
+            print(f"  [hub] could not write {path}: {exc!r}")
+            return False
+
+    def get(self, path):
+        """Bytes of `path`, or None when it does not exist. Any other error (an
+        authentication failure, the network) is raised: reading it as "absent"
+        would make every claim look free."""
+        try:
+            local = self._download(path, force_download=True)
+        except Exception as exc:
+            if type(exc).__name__ in _NOT_FOUND:
+                return None
+            raise
+        return Path(local).read_bytes()
+
+
+class RunClaims:
+
+    def __init__(self, mirror, stale_minutes, session, clock=time.time, settle_seconds=5):
+        self.mirror = mirror
+        self.stale_seconds = stale_minutes * 60
+        self.session = session
+        self.clock = clock
+        self.settle_seconds = settle_seconds
+
+    def _path(self, run_name):
+        return f"{self.mirror.suite}/claims/{run_name}.json"
+
+    def _read(self, run_name):
+        data = self.mirror.get(self._path(run_name))
+        return json.loads(data) if data else None
+
+    def _write(self, run_name, message):
+        marker = {'session': self.session, 'refreshed': self.clock()}
+        return self.mirror.put(self._path(run_name), json.dumps(marker).encode(), message)
+
+    def _held_by_another(self, marker):
+        return (marker is not None and marker['session'] != self.session
+                and self.clock() - marker['refreshed'] < self.stale_seconds)
+
+    def claim(self, run_name):
+        if not self.mirror.enabled:
+            return True
+        if self._held_by_another(self._read(run_name)):
+            print(f"  [hub] {run_name}: being trained by another session, skipped")
+            return False
+        if not self._write(run_name, f"{run_name}: claimed by {self.session}"):
+            print(f"  [hub] {run_name}: could not write the claim, training anyway")
+            return True
+        time.sleep(self.settle_seconds)
+        marker = self._read(run_name)
+        if marker is not None and marker['session'] != self.session:
+            print(f"  [hub] {run_name}: claimed at the same time by {marker['session']}, skipped")
+            return False
+        return True
+
+    def refresh(self, run_name):
+        if self.mirror.enabled:
+            self._write(run_name, f"{run_name}: still training")
+
+    def release(self, run_name):
+        if self.mirror.enabled:
+            self.mirror.remove(self._path(run_name), f"{run_name}: released")
 
 
 class RunFiles:
@@ -144,5 +235,8 @@ class RunFiles:
 HUB = HubMirror(repo=_env('IPS_HUB_REPO'), suite=f"ips-suite-{SUITE_VERSION}",
                 roots={'results': RESULTS, 'artifacts': ARTIFACTS},
                 every=_env_int('IPS_HUB_EVERY', 2), cache_dir=WORK / 'hub-cache')
+SESSION = f"{platform.node()}-{uuid.uuid4().hex[:8]}"
+CLAIMS = RunClaims(HUB, stale_minutes=_env_int('IPS_HUB_CLAIM_STALE_MIN', 120), session=SESSION)
 if HUB.enabled:
-    print(f"  hub         : {HUB.repo} (private dataset, sync every {HUB.every} epochs)")
+    print(f"  hub         : {HUB.repo} (private dataset, sync every {HUB.every} epochs, "
+          f"session {SESSION})")

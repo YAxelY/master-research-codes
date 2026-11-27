@@ -6,7 +6,7 @@ from ips_suite.config.environment import _env, _env_int
 from ips_suite.config.experiments import GROUPS, REGISTRY, RESULTS, V2, make_conf
 from ips_suite.evaluation.benchmark import bench
 from ips_suite.models.factory import build_model, cost_report
-from ips_suite.training.hub import HUB
+from ips_suite.training.hub import CLAIMS, HUB
 from ips_suite.training.runner import eval_v2, run
 
 
@@ -78,6 +78,9 @@ def main():
         _failed = []
         for _seed in SEEDS:
             for _key in TO_RUN:
+                run_name = f"{_key}_s{_seed}"
+                if not CLAIMS.claim(run_name):
+                    continue
                 try:
                     run(_key, _seed, n_epoch=EPOCHS)
                 except Exception as _exc:
@@ -86,6 +89,8 @@ def main():
                     print(f"\n[FAILED] {_key} seed {_seed} : {_exc!r}")
                     traceback.print_exc()
                     print("  -> continuing with the next run\n")
+                finally:
+                    CLAIMS.release(run_name)
         if _failed:
             print(f"\n{len(_failed)} run(s) failed :")
             for _k, _s, _e in _failed:
