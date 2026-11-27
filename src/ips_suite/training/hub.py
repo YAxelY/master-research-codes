@@ -10,6 +10,8 @@ from ips_suite.config.environment import SUITE_VERSION, _env, _env_int
 from ips_suite.config.experiments import ARTIFACTS, RESULTS, WORK
 
 TOKEN_DATASET = 'ips-suite-hub-token'
+# errors that mean "this file is not in the repository" (huggingface_hub, and the test stub)
+_NOT_FOUND = {'EntryNotFoundError', 'RemoteEntryNotFoundError', 'FileNotFoundError'}
 KAGGLE_INPUT = Path('/kaggle/input')
 
 
@@ -64,7 +66,23 @@ class HubMirror:
         return self._api
 
     def connect(self):
-        return self.api
+        """Open the repository and check that a download with the token works.
+
+        Writes (commits) and downloads authenticate separately: a session whose
+        downloads are anonymous can push checkpoints but never resume, and reads
+        every claim as free. Stop at once instead of training blind."""
+        api = self.api
+        try:
+            self._download('.gitattributes', force_download=True)
+        except Exception as exc:
+            raise RuntimeError(f"the Hub repository {self.repo} accepts the token for "
+                               f"writing but a download failed: {exc!r}") from exc
+        return api
+
+    def _download(self, path, force_download=False):
+        from huggingface_hub import hf_hub_download
+        return hf_hub_download(self.repo, path, repo_type='dataset', token=self.api.token,
+                               force_download=force_download, local_dir=str(self.cache_dir))
 
     def remote_path(self, local):
         local = Path(local)
@@ -79,14 +97,12 @@ class HubMirror:
     def pull(self, files):
         if not self.enabled:
             return
-        from huggingface_hub import hf_hub_download
         remote = set(self.api.list_repo_files(self.repo, repo_type='dataset'))
         for local in files:
             path = self.remote_path(local)
             if local.exists() or path not in remote:
                 continue
-            cached = hf_hub_download(self.repo, path, repo_type='dataset',
-                                     local_dir=str(self.cache_dir))
+            cached = self._download(path)
             local.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(cached, local)
             print(f"  [hub] fetched {path}")
@@ -130,13 +146,16 @@ class HubMirror:
             return False
 
     def get(self, path):
-        from huggingface_hub import hf_hub_download
+        """Bytes of `path`, or None when it does not exist. Any other error (an
+        authentication failure, the network) is raised: reading it as "absent"
+        would make every claim look free."""
         try:
-            local = hf_hub_download(self.repo, path, repo_type='dataset', force_download=True,
-                                    local_dir=str(self.cache_dir))
-            return Path(local).read_bytes()
-        except Exception:
-            return None
+            local = self._download(path, force_download=True)
+        except Exception as exc:
+            if type(exc).__name__ in _NOT_FOUND:
+                return None
+            raise
+        return Path(local).read_bytes()
 
 
 class RunClaims:

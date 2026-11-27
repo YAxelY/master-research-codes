@@ -102,7 +102,14 @@ def hub_module(tmp_path, monkeypatch):
         def delete_file(self, path, repo, repo_type, commit_message):
             (store / path).unlink()
 
-    def hf_hub_download(repo, path, repo_type, local_dir, force_download=False):
+    class RepositoryNotFoundError(Exception):
+        pass
+
+    def hf_hub_download(repo, path, repo_type, local_dir, force_download=False, token=None):
+        # as on Kaggle: the HF_TOKEN variable is not set there, so only a token
+        # passed explicitly authenticates; a private repository answers 401
+        if token != 'hf_test':
+            raise RepositoryNotFoundError('401 Client Error (anonymous)')
         if not (store / path).exists():
             raise FileNotFoundError(path)
         target = Path(local_dir) / path
@@ -155,6 +162,37 @@ def test_hub_resume_and_final_upload(hub_module):
     hub.HUB.delete(files.state, 'drop')
     HfApi.failures = 5
     assert hub.HUB.push([files.result], 'never raises') is False
+
+
+def test_hub_downloads_use_the_token_and_claims_are_read(hub_module):
+    hub, HfApi, work, store = hub_module
+    (store / '.gitattributes').parent.mkdir(parents=True, exist_ok=True)
+    (store / '.gitattributes').write_text('*.pt filter=lfs')
+    hub.HUB.connect()                                 # the download check passes
+    files = hub.RunFiles('ddr_mil66', 'ddr_mil66_s42')
+    files.state.parent.mkdir(parents=True, exist_ok=True)
+    files.state.write_bytes(b'state')
+    assert hub.HUB.push(files.resume_point, 'epoch 18')
+    files.state.unlink()
+    hub.HUB.pull(files.restorable)                    # a new session resumes
+    assert files.state.read_bytes() == b'state'
+    a = hub.RunClaims(hub.HUB, stale_minutes=120, session='A')
+    b = hub.RunClaims(hub.HUB, stale_minutes=120, session='B')
+    assert a.claim('ddr_mil66_s42')
+    assert not b.claim('ddr_mil66_s42')               # B reads A's claim and skips
+    a.release('ddr_mil66_s42')
+    assert b.claim('ddr_mil66_s42')
+
+
+def test_hub_stops_when_downloads_fail(hub_module, monkeypatch):
+    hub, _, _, store = hub_module
+    (store / '.gitattributes').parent.mkdir(parents=True, exist_ok=True)
+    (store / '.gitattributes').write_text('x')
+    monkeypatch.setattr(hub.HUB.api, 'token', 'wrong')
+    with pytest.raises(RuntimeError, match='download failed'):
+        hub.HUB.connect()
+    with pytest.raises(Exception, match='401'):      # never read as "no claim"
+        hub.RunClaims(hub.HUB, stale_minutes=120, session='A').claim('x_s42')
 
 
 def test_hub_token_lookup_order(hub_module, tmp_path, monkeypatch):
